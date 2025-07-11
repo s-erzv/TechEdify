@@ -2,7 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard'; 
-import AdminGuard from './components/AdminGuard';
+import { AdminGuard } from './components/AdminGuard';
+import AuthGuard from './components/AuthGuard';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import Users from './pages/admin/Users';
@@ -13,13 +14,18 @@ import Quizzes from './pages/admin/Quizzes';
 import Statistics from './pages/admin/Statistics';
 
 
-
 function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/Auth" element={<Auth />} />
-      <Route path="/Dashboard" element={<Dashboard />} />
+
+      <Route path="/Dashboard" element={
+        <AuthGuard>
+          <Dashboard />
+        </AuthGuard>
+      } />
+
       <Route path="/admin" element={
         <AdminGuard>
           <AdminLayout />
@@ -33,7 +39,8 @@ function App() {
         <Route path="quizzes" element={<Quizzes />} />
         <Route path="statistics" element={<Statistics />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" />} />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

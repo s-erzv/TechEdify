@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Pastikan path ini benar
+import { useAuth } from '../context/AuthContext'; 
 import { motion, AnimatePresence } from 'framer-motion';
 
 
@@ -11,21 +11,25 @@ export default function Auth() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
-  // Destructuring signInWithPassword, signUp, signInWithOAuth, loading, user dari useAuth
   const { signInWithPassword, signUp, signInWithOAuth, loading: authLoading, user } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Navigasi setelah autentikasi berhasil dan data user tersedia
-    if (!authLoading && user) {
-        const role = user.user_metadata?.role;
-        if (role === 'admin') {
-            navigate('/admin');
-        } else {
-            navigate('/Dashboard');
+    useEffect(() => {
+        console.log('Auth.jsx useEffect: authLoading:', authLoading, 'user:', user);
+        if (!authLoading && user && user.role) { 
+            const role = user.role; 
+            console.log('Auth.jsx useEffect: User role for redirection:', role);
+            if (role === 'admin') {
+                navigate('/admin/dashboard'); 
+            } else if (role === 'student') {
+                navigate('/dashboard'); 
+            } else {
+                navigate('/dashboard'); 
+            }
         }
-    }
-  }, [authLoading, user, navigate]);
+    }, [authLoading, user, navigate]);
+
+    
 
 
   const toggleMode = () => {
@@ -44,31 +48,27 @@ export default function Auth() {
     return `${baseFirst}${baseLast}${random}`;
   };
 
-  // --- Fungsi handleLogin yang diperbarui ---
   const handleLogin = async () => {
     console.log('Auth.jsx: Attempting manual login for:', email);
     console.log('Auth.jsx: Calling signInWithPassword with credentials:', { email, password });
-    console.log('Auth.jsx: signInWithPassword function received from useAuth:', signInWithPassword); // <-- Log tambahan
+    console.log('Auth.jsx: signInWithPassword function received from useAuth:', signInWithPassword); 
 
-    // Validasi apakah signInWithPassword adalah fungsi yang valid
     if (typeof signInWithPassword !== 'function') {
-        console.error("Auth.jsx: ERROR: signInWithPassword is not a valid function. Check AuthContext export."); // <-- Log error eksplisit
+        console.error("Auth.jsx: ERROR: signInWithPassword is not a valid function. Check AuthContext export.");
         alert("Login service not ready or misconfigured. Please try again or contact support.");
-        return; // Hentikan eksekusi jika tidak valid
+        return; 
     }
 
-    const { error } = await signInWithPassword({ email, password }); // Baris ini adalah Auth.jsx:49:29 Anda yang error
+    const { error } = await signInWithPassword({ email, password }); 
 
     if (error) {
       alert(error.message);
       console.error('Auth.jsx: Login error:', error.message);
     } else {
       console.log('Auth.jsx: Login request sent, awaiting auth state change in context.');
-      // Tidak perlu navigate di sini, useEffect di atas akan menangani navigasi setelah user state diperbarui
     }
   };
 
-  // --- Fungsi handleRegister Anda yang sudah baik ---
   const handleRegister = async () => {
     console.log('Auth.jsx: Attempting manual registration for:', email);
 
@@ -88,9 +88,8 @@ export default function Auth() {
     };
 
     console.log('Auth.jsx: Calling signUp with payload:', JSON.stringify(registrationPayload, null, 2));
-    console.log('Auth.jsx: signUp function received from useAuth:', signUp); // <-- Log tambahan
+    console.log('Auth.jsx: signUp function received from useAuth:', signUp); 
 
-    // Validasi apakah signUp adalah fungsi yang valid
     if (typeof signUp !== 'function') {
         console.error("Auth.jsx: ERROR: signUp is not a valid function. Check AuthContext export.");
         alert("Registration service not ready or misconfigured. Please try again or contact support.");
@@ -105,33 +104,19 @@ export default function Auth() {
     } else {
         console.log('Auth.jsx: Registration successful, check email for confirmation.');
         alert('Check your email to confirm your account. After confirmation, you can sign in.');
-        setIsLogin(true); // Kembali ke mode login setelah registrasi berhasil
+        setIsLogin(true); 
     }
   };
 
-  // --- Fungsi handleGoogleLogin yang diperbarui ---
-  const handleGoogleLogin = async () => {
-    console.log('Auth.jsx: Attempting Google OAuth login.');
-    console.log('Auth.jsx: Calling signInWithOAuth with provider: google');
-    console.log('Auth.jsx: signInWithOAuth function received from useAuth:', signInWithOAuth); // <-- Log tambahan
+  const handleGoogleLogin = () => {
+        console.log("Auth.jsx: Attempting Google OAuth login.");
+        if (typeof signInWithOAuth !== "function") {
+            console.error("Auth.jsx: ERROR: signInWithOAuth is not a valid function. Check AuthContext export.");
+            return;
+        }
 
-    // Validasi apakah signInWithOAuth adalah fungsi yang valid
-    if (typeof signInWithOAuth !== 'function') {
-        console.error("Auth.jsx: ERROR: signInWithOAuth is not a valid function. Check AuthContext export."); // <-- Log error eksplisit
-        alert("Google login service not ready or misconfigured. Please try again or contact support.");
-        return; // Hentikan eksekusi jika tidak valid
-    }
-
-    const { error } = await signInWithOAuth({ provider: 'google' });
-
-    if (error) {
-      alert(error.message);
-      console.error('Auth.jsx: Google login error:', error.message);
-    } else {
-      console.log('Auth.jsx: Google login request sent, awaiting auth state change in context.');
-      // Tidak perlu navigate di sini, useEffect di atas akan menangani navigasi setelah user state diperbarui
-    }
-  };
+        signInWithOAuth('google');
+    };
 
   const formVariants = {
     login: { x: '0%', opacity: 1 },
