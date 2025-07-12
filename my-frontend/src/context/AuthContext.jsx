@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null); // Tambahkan 'export' di sini
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [isReady, setIsReady] = useState(false);
 
 const fetchAndSetUserProfile = async (supabaseUser) => {
-  console.log("🔍 fetchAndSetUserProfile CALLED with:", supabaseUser);
+  console.log("剥 fetchAndSetUserProfile CALLED with:", supabaseUser);
   let userRole = 'student'; // Default role if profile fetch fails or not found
 
   try {
@@ -78,7 +78,7 @@ const fetchAndSetUserProfile = async (supabaseUser) => {
   };
 
   useEffect(() => {
-    console.log('🔥 useEffect -> Auth state:', { user, loading, isReady, session });
+    console.log('櫨 useEffect -> Auth state:', { user, loading, isReady, session });
   }, [user, loading, isReady, session]);
 
   useEffect(() => {
@@ -134,7 +134,7 @@ const fetchAndSetUserProfile = async (supabaseUser) => {
           setIsReady(false);
           setLoading(false);
         } else if (event === 'SIGNED_IN' && currentSession?.user) {
-          console.log('🔥 SIGNED_IN event - starting profile fetch (AuthContext)');
+          console.log('櫨 SIGNED_IN event - starting profile fetch (AuthContext)');
 
           const fetchedUser = currentSession.user;
 
@@ -145,7 +145,7 @@ const fetchAndSetUserProfile = async (supabaseUser) => {
 
         } else if (event === 'USER_UPDATED') {
           // Jika user metadata di auth.users diupdate, panggil lagi fetchAndSetUserProfile
-          console.log('🔥 USER_UPDATED event - refetching profile (AuthContext)');
+          console.log('櫨 USER_UPDATED event - refetching profile (AuthContext)');
           await fetchAndSetUserProfile(currentSession.user);
         }
         else {

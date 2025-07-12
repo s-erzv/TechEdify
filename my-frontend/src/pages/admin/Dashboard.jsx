@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react'; // Tambahkan useContext
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient'; // Pastikan path ini benar
 import AdminLayout from '../../components/AdminLayout';
+import { AuthContext } from '../../context/AuthContext'; // Import AuthContext
 
 import {
   MagnifyingGlassIcon,
@@ -19,6 +20,8 @@ import {
 
 
 export default function AdminDashboard() {
+  const { logout } = useContext(AuthContext); // Gunakan useContext untuk mendapatkan fungsi logout
+
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
     activeModules: 0, // Akan diisi dari database
@@ -187,14 +190,20 @@ export default function AdminDashboard() {
               <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
             </div>
 
-            {/* User Profile */}
+            {/* User Profile and Logout Button */}
             <div className="flex items-center space-x-2">
               <img
                 src={adminUser?.user_metadata?.avatar_url || '/default-admin-avatar.jpg'}
                 alt="Admin Avatar"
                 className="h-10 w-10 rounded-full object-cover border-2 border-purple-300"
               />
-              <ChevronDownIcon className="h-5 w-5 text-gray-500 cursor-pointer" />
+              {/* Tambahkan tombol Logout di sini */}
+              <button
+                onClick={logout} // Panggil fungsi logout dari AuthContext
+                className="bg-purple-600 text-white text-sm font-semibold py-2 px-4 rounded-full hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </header>

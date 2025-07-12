@@ -44,19 +44,19 @@ export default function Sidebar() {
               Manage Users
             </Link>
           </li>
-          {/* Manage Materials */}
+          {/* Manage Coursess */}
           <li className="mb-2">
             <Link
-              to="/admin/materials"
-              onClick={() => handleItemClick('/admin/materials')}
+              to="/admin/courses"
+              onClick={() => handleItemClick('/admin/courses')}
               className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/materials'
+                location.pathname === '/admin/courses'
                   ? 'bg-emerald-600 text-white font-semibold'
                   : 'hover:bg-emerald-700 text-gray-200'
               }`}
             >
-              <i className="fas fa-book-open mr-3"></i>
-              Manage Materials
+              <i className="fas fa-cube mr-3"></i>
+              Manage Courses
             </Link>
           </li>
           {/* Manage Modules */}
@@ -87,6 +87,21 @@ export default function Sidebar() {
             >
               <i className="fas fa-file-alt mr-3"></i>
               Manage Lessons
+            </Link>
+          </li>
+          {/* Manage Materials */}
+          <li className="mb-2">
+            <Link
+              to="/admin/materials"
+              onClick={() => handleItemClick('/admin/materials')}
+              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
+                location.pathname === '/admin/materials'
+                  ? 'bg-emerald-600 text-white font-semibold'
+                  : 'hover:bg-emerald-700 text-gray-200'
+              }`}
+            >
+              <i className="fas fa-book-open mr-3"></i>
+              Manage Materials
             </Link>
           </li>
           {/* Manage Quizzes */}
