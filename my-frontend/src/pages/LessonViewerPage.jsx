@@ -1,5 +1,5 @@
 // frontend/src/pages/LessonViewerPage.jsx
-import React, { useState, useEffect, useContext, useCallback } from 'react'; // Tambah useCallback
+import React, { useState, useEffect, useContext, useCallback } from 'react'; // Tambah useCallback di import
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import MainLayout from '../components/mainLayout';
@@ -17,7 +17,7 @@ import {
     BookOpenIcon,
     ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
-import { CheckCircleIcon as SolidCheckCircleIcon } from '@heroicons/react/24/solid';
+import { CheckCircleIcon as SolidCheckCircleIcon } from '@heroicons/react/24/solid'; // Pastikan ini diimport jika digunakan
 
 // Helper function untuk mendapatkan ID video YouTube
 const getYouTubeVideoId = (url) => {
@@ -44,6 +44,8 @@ export default function LessonViewerPage() {
     const [courseTitle, setCourseTitle] = useState(''); // Judul kursus
     const [isCompletingCourse, setIsCompletingCourse] = useState(false); // State baru untuk animasi tombol Complete Course
     const [rawCourseDataModules, setRawCourseDataModules] = useState([]); // State temporer untuk struktur course mentah
+    const [userCourseProgress, setUserCourseProgress] = useState(null); // State baru untuk menyimpan progres kursus user saat ini
+
 
     // Fungsi untuk Fetch completed lessons - Dibuat sebagai useCallback agar stabil
     const fetchCompletedLessons = useCallback(async () => {
@@ -54,7 +56,7 @@ export default function LessonViewerPage() {
                 .from('user_lessons_completion')
                 .select('lesson_id')
                 .eq('user_id', user.id)
-                .eq('course_id', courseId);
+                .eq('course_id', courseId); // Tambahkan filter course_id
 
             if (error) throw error;
             
@@ -65,6 +67,119 @@ export default function LessonViewerPage() {
             console.error('Error fetching completed lessons:', err.message);
         }
     }, [user, courseId]); // Dependencies: user dan courseId
+
+    // Fungsi untuk memperbarui progres kursus di tabel user_course_progress
+    const updateCourseProgress = useCallback(async () => {
+        if (!user || !courseId || courseStructure.length === 0) return;
+
+        // Hitung pelajaran yang sudah selesai
+        const totalLessonsInCourse = courseStructure.length;
+        const actualNewCompletedLessonsCount = completedLessons.size; // Ambil dari state completedLessons
+
+        let newProgressPercentage = (actualNewCompletedLessonsCount / totalLessonsInCourse) * 100;
+        if (isNaN(newProgressPercentage)) newProgressPercentage = 0; // Hindari NaN jika totalLessonsInCourse 0
+
+        let isCourseCompleted = false;
+        if (actualNewCompletedLessonsCount === totalLessonsInCourse && totalLessonsInCourse > 0) {
+            isCourseCompleted = true;
+        }
+
+        const currentTimestamp = new Date().toISOString();
+
+        const updateData = {
+            completed_lessons_count: actualNewCompletedLessonsCount,
+            progress_percentage: newProgressPercentage,
+            is_completed: isCourseCompleted,
+            last_accessed_at: currentTimestamp,
+            // completed_at hanya diisi jika is_completed menjadi true DAN sebelumnya belum selesai
+            ...(isCourseCompleted && userCourseProgress && !userCourseProgress.is_completed && { completed_at: currentTimestamp })
+        };
+
+        try {
+            // Coba ambil progres yang sudah ada
+            const { data: currentProgress, error: fetchProgressError } = await supabase
+                .from('user_course_progress')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('course_id', courseId)
+                .single();
+
+            if (fetchProgressError && fetchProgressError.code !== 'PGRST116') { // PGRST116 is "no rows found"
+                throw fetchProgressError; // Throw if it's a real error, not just no rows found
+            }
+            setUserCourseProgress(currentProgress); // Perbarui state userCourseProgress
+
+            if (currentProgress) {
+                // Update entri yang sudah ada
+                const { error: updateProgressError } = await supabase
+                    .from('user_course_progress')
+                    .update(updateData)
+                    .eq('id', currentProgress.id);
+                if (updateProgressError) throw updateProgressError;
+                console.log("Course progress updated:", updateData);
+            } else {
+                // Masukkan entri baru jika belum ada
+                // Ini penting jika record user_course_progress belum dibuat (misal karena user langsung ke lesson link)
+                const { error: insertProgressError } = await supabase
+                    .from('user_course_progress')
+                    .insert({
+                        user_id: user.id,
+                        course_id: courseId,
+                        // current_module_id, current_lesson_id akan diupdate saat navigasi/klik lesson
+                        completed_lessons_count: actualNewCompletedLessonsCount,
+                        progress_percentage: newProgressPercentage,
+                        is_completed: isCourseCompleted,
+                        started_at: currentTimestamp, // Asumsi dimulai sekarang jika tidak ada
+                        last_accessed_at: currentTimestamp,
+                        ...(isCourseCompleted && { completed_at: currentTimestamp })
+                    });
+                if (insertProgressError) throw insertProgressError;
+                console.log("New course progress record created:", updateData);
+            }
+        } catch (err) {
+            console.error("Error updating/inserting course progress:", err.message);
+        }
+    }, [user, courseId, courseStructure.length, completedLessons.size, userCourseProgress]); // Tambahkan userCourseProgress sebagai dependency
+
+    // markLessonAsComplete juga perlu diletakkan di sini, setelah updateCourseProgress
+    const markLessonAsComplete = useCallback(async (lessonIdToComplete) => {
+        if (!user || !courseId || !lessonIdToComplete) {
+            console.warn("Missing user, courseId, or lessonIdToComplete to mark lesson complete.");
+            return;
+        }
+
+        try {
+            const { error: completionError } = await supabase
+                .from('user_lessons_completion')
+                .insert({
+                    user_id: user.id,
+                    course_id: courseId, // Pastikan courseId juga disimpan di user_lessons_completion
+                    lesson_id: lessonIdToComplete,
+                    completed_at: new Date().toISOString()
+                });
+
+            if (completionError) {
+                if (completionError.code === '23505') { // Error code for unique constraint violation
+                    console.log(`Lesson ${lessonIdToComplete} already marked as complete for user ${user.id}. Proceeding with progress update.`);
+                    // Even if it's a duplicate, we proceed as the lesson is conceptually complete.
+                } else {
+                    console.error("Error marking lesson complete:", completionError.message);
+                    return; // Return for other critical errors
+                }
+            } else {
+                console.log(`Lesson ${lessonIdToComplete} successfully marked as complete.`);
+                // After successful insert, update local completedLessons state
+                setCompletedLessons(prev => new Set(prev).add(lessonIdToComplete));
+            }
+
+            // This part will run whether the lesson was newly completed or already completed
+            await updateCourseProgress();
+
+        } catch (err) {
+            console.error("Unexpected error in markLessonAsComplete:", err);
+        }
+    }, [user, courseId, updateCourseProgress, setCompletedLessons]); // Dependencies for useCallback
+
 
     // useEffect pertama: Fetch detail pelajaran dan struktur kursus
     // Ini akan berjalan saat courseId atau lessonId berubah
@@ -116,10 +231,9 @@ export default function LessonViewerPage() {
                 if (courseError) throw courseError;
 
                 setCourseTitle(courseData.title);
-                setRawCourseDataModules(courseData.modules || []); // Simpan data mentah modul
+                setRawCourseDataModules(courseData.modules || []);
                 
                 // Setelah fetching struktur kursus, panggil juga fetch completed lessons
-                // ini untuk memastikan completedLessons di-refresh saat berpindah lesson
                 if (user) {
                     await fetchCompletedLessons(); 
                 }
@@ -139,7 +253,6 @@ export default function LessonViewerPage() {
 
 
     // useEffect kedua: Merekonstruksi courseModulesTree dan courseStructure
-    // Kapanpun rawCourseDataModules atau completedLessons berubah, ini akan berjalan
     useEffect(() => {
         if (!rawCourseDataModules.length) {
             setCourseStructure([]); // Kosongkan jika tidak ada modul
@@ -171,7 +284,7 @@ export default function LessonViewerPage() {
         console.log("Updated courseModulesTree:", modulesTree);
         console.log("Updated courseStructure (flat):", allLessonsFlat);
 
-    }, [rawCourseDataModules, completedLessons]); // Dependencies: saat ini berubah, re-render tree
+    }, [rawCourseDataModules, completedLessons]);
 
 
     const handleGoBack = () => {
@@ -193,107 +306,6 @@ export default function LessonViewerPage() {
     const prevLesson = findAdjacentLesson('prev');
     const nextLesson = findAdjacentLesson('next');
 
-    const markLessonAsComplete = async (lessonIdToComplete) => {
-        if (!user || !lessonIdToComplete || completedLessons.has(lessonIdToComplete)) return;
-
-        try {
-            console.log("Attempting to mark lesson as complete:", lessonIdToComplete);
-            // 1. Catat penyelesaian pelajaran
-            const { error: completionError } = await supabase.from('user_lessons_completion').insert({
-                user_id: user.id,
-                course_id: courseId,
-                lesson_id: lessonIdToComplete,
-                completed_at: new Date().toISOString()
-            });
-            if (completionError) throw completionError;
-
-            console.log("Lesson completion recorded in DB.");
-
-            // PENTING: Update local `completedLessons` SETELAH DB sukses.
-            // Ini akan memicu `useEffect` ke-3 untuk merekonstruksi sidebar
-            setCompletedLessons(prev => {
-                const newSet = new Set(prev);
-                newSet.add(lessonIdToComplete);
-                console.log("Local completedLessons updated:", newSet);
-                return newSet;
-            });
-            
-            // 2. Perbarui progres kursus
-            // Fetch ulang progres untuk memastikan kita punya data terbaru sebelum update
-            const { data: userCourseProgress, error: fetchProgressError } = await supabase
-                .from('user_course_progress')
-                .select('*')
-                .eq('user_id', user.id)
-                .eq('course_id', courseId)
-                .single();
-            
-            if (fetchProgressError && fetchProgressError.code !== 'PGRST116') { // PGRST116 = no rows found
-                throw fetchProgressError;
-            }
-
-            const totalLessonsInCourse = courseStructure.length;
-            
-            // Hitung completed lessons berdasarkan SET LOKAL yang sudah diupdate
-            const newCompletedLessonsCount = (completedLessons.has(lessonIdToComplete) ? completedLessons.size : completedLessons.size + 1);
-            // Safety check for calculation if the set was not updated instantly
-            // Or better, just use tempCompleted which contains the latest state including the just completed one
-            const tempCompletedForCalculation = new Set(completedLessons);
-            tempCompletedForCalculation.add(lessonIdToComplete);
-            const actualNewCompletedLessonsCount = tempCompletedForCalculation.size;
-
-
-            let newProgressPercentage = (actualNewCompletedLessonsCount / totalLessonsInCourse) * 100;
-            if (isNaN(newProgressPercentage) || totalLessonsInCourse === 0) newProgressPercentage = 0;
-
-            const updateData = {
-                completed_lessons_count: actualNewCompletedLessonsCount,
-                progress_percentage: newProgressPercentage,
-                is_completed: newProgressPercentage >= 100,
-                last_accessed_at: new Date().toISOString(),
-                current_module_id: lessonDetails?.module_id || null,
-                current_lesson_id: lessonDetails?.id || null
-            };
-            console.log("Calculated updateData for course progress:", updateData);
-
-            if (userCourseProgress) {
-                const { error: updateProgressError } = await supabase
-                    .from('user_course_progress')
-                    .update(updateData)
-                    .eq('id', userCourseProgress.id);
-                if (updateProgressError) throw updateProgressError;
-                console.log("User course progress updated.");
-            } else {
-                console.warn("User course progress record not found, creating new one during completion.");
-                const { error: insertProgressError } = await supabase
-                    .from('user_course_progress')
-                    .insert({
-                        user_id: user.id,
-                        course_id: courseId,
-                        started_at: new Date().toISOString(),
-                        ...updateData
-                    });
-                if (insertProgressError) throw insertProgressError;
-                console.log("New user course progress created.");
-            }
-
-        } catch (err) {
-            console.error('Error marking lesson complete:', err.message);
-            if (err.code === '23505') {
-                // Duplicate key error - lesson already completed. Set local state anyway.
-                setCompletedLessons(prev => new Set([...prev, lessonIdToComplete]));
-                console.log("Lesson already marked complete (duplicate key). Local state updated.");
-            } else {
-                alert('Gagal menandai pelajaran selesai: ' + err.message);
-                // Rollback local state jika terjadi error (selain duplicate key)
-                setCompletedLessons(prev => {
-                    const newSet = new Set(prev);
-                    newSet.delete(lessonIdToComplete);
-                    console.log("Error, rolling back local completedLessons:", newSet);
-                    return newSet;
-                });
-            }
-        }
-    };
 
     const handleNextLessonNavigation = async () => {
         if (!user || nextButtonLoading) return;
@@ -306,12 +318,10 @@ export default function LessonViewerPage() {
                 await markLessonAsComplete(lessonId);
             } else {
                 console.log("Lesson already completed, skipping markLessonAsComplete.");
+                // Jika pelajaran sudah selesai, tetap panggil updateCourseProgress untuk memastikan progres keseluruhan up-to-date
+                await updateCourseProgress(); 
             }
 
-            // Setelah operasi markLessonAsComplete selesai dan state `completedLessons` diperbarui,
-            // barulah kita cek kondisi untuk navigasi.
-            // Tidak perlu setTimeout di sini karena `completedLessons` sudah memicu re-render.
-            
             const isCurrentLessonLast = courseStructure[courseStructure.length - 1]?.id === lessonId;
 
             if (nextLesson) {
@@ -321,12 +331,12 @@ export default function LessonViewerPage() {
                 
                 setTimeout(() => {
                     alert('Selamat! Anda telah menyelesaikan semua pelajaran dalam kursus ini.');
-                    navigate(`/course/${courseId}/complete`);
+                    navigate(`/course/${courseId}/complete`); // Atau halaman lain setelah kursus selesai
                     setIsCompletingCourse(false);
                 }, 1500); // Tunggu sebentar untuk animasi "Completing..."
             } else {
                 console.warn("No next lesson found, but it's not the last lesson. Navigating to course overview.");
-                navigate(`/course/${courseId}`);
+                navigate(`/course/${courseId}`); // Kembali ke halaman detail kursus jika tidak ada pelajaran berikutnya
             }
         } catch (err) {
             console.error('Error in next lesson navigation:', err.message);
@@ -346,7 +356,7 @@ export default function LessonViewerPage() {
         const { content_type, content_url, content_text, title } = material.materials;
 
         const youtubeEmbedUrl = content_url && getYouTubeVideoId(content_url) 
-                                ? `https://www.youtube.com/embed/${getYouTubeVideoId(content_url)}` 
+                                ? `http://googleusercontent.com/youtube.com/embed/${getYouTubeVideoId(content_url)}` 
                                 : null; // Perbaikan URL YouTube embed
 
         switch (content_type) {
@@ -356,7 +366,7 @@ export default function LessonViewerPage() {
                         <iframe
                             className="w-full h-full rounded-lg"
                             src={youtubeEmbedUrl}
-                            title={title || "Video player"}
+                            title={title || "YouTube video player"}
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
@@ -369,10 +379,9 @@ export default function LessonViewerPage() {
                 return (
                     <div className="prose max-w-none">
                         {/* Menggunakan dangerouslySetInnerHTML jika content_text adalah HTML */}
+                        {/* Jika content_text adalah plain text, gunakan ini: */}
                         <div dangerouslySetInnerHTML={{ __html: content_text }} /> 
-                        {/* Jika content_text adalah plain text, gunakan ini:
-                        <p className="whitespace-pre-wrap">{content_text}</p>
-                        */}
+                        {/* <p className="whitespace-pre-wrap">{content_text}</p> */}
                     </div>
                 );
             case 'script':
@@ -430,7 +439,7 @@ export default function LessonViewerPage() {
     }
 
     const materials = lessonDetails.lesson_materials || [];
-    const isCurrentLessonLast = courseStructure[courseStructure.length - 1]?.id === lessonId;
+    const isCurrentLessonLast = courseStructure[courseStructure.length - 1]?.id === lessonId; // Tambahkan ini jika belum ada
 
 
     return (
@@ -477,8 +486,8 @@ export default function LessonViewerPage() {
                                                                 : 'text-gray-700 hover:bg-gray-100 hover:text-purple-700'
                                                         }`}
                                                     >
-                                                        {/* Icon di sidebar lesson - kini menggunakan `lesson.isCompleted` */}
-                                                        {lesson.isCompleted ? (
+                                                        {/* Icon di sidebar lesson - kini menggunakan `completedLessons` */}
+                                                        {completedLessons.has(lesson.id) ? (
                                                             <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
                                                         ) : (
                                                             <PlayCircleIcon className="h-4 w-4 mr-2" />

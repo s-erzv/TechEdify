@@ -94,7 +94,7 @@ export default function CourseDetailsPage() {
                     .eq('course_id', courseId)
                     .single();
                 
-                if (error && error.code !== 'PGRST116') {
+                if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found (not an error for .single())
                     throw error;
                 }
                 setIsEnrolled(!!data);
@@ -150,7 +150,7 @@ export default function CourseDetailsPage() {
 
         } catch (err) {
             console.error('Error enrolling in course:', err.message);
-            if (err.code === '23505') {
+            if (err.code === '23505') { // Ini adalah penanganan untuk error duplicate key
                 alert('Anda sudah terdaftar di kursus ini.');
                 setIsEnrolled(true);
                 const firstModule = courseDetails.modules.length > 0 ? courseDetails.modules[0] : null;
@@ -212,12 +212,10 @@ export default function CourseDetailsPage() {
                     <p className="text-gray-600">Instructor: {courseDetails.profiles?.full_name || 'N/A'}</p>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6"> {/* Perubahan Grid Utama */}
-                    {/* Kolom Kiri: Course Info & Enroll */}
-                    <div className="lg:col-span-1"> {/* Memakan 1/3 lebar pada layar besar */}
-                        <div className="bg-white p-6 rounded-xl shadow-md mb-6"> {/* Tambah mb-6 di sini */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div className="lg:col-span-1">
+                        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Course Info</h2>
-                            {/* Pindah Judul, Deskripsi, Thumbnail ke sini */}
                             <p className="text-gray-700 mb-2"><strong>Course Title:</strong> {courseDetails.title}</p>
                             <p className="text-gray-700 mb-2 whitespace-pre-wrap"><strong>Description:</strong> {courseDetails.description || '-'}</p>
                             
@@ -246,81 +244,81 @@ export default function CourseDetailsPage() {
                         </div>
                     </div>
 
-                    {/* Kolom Kanan: Modules & Lessons */}
-                    <div className="lg:col-span-2"> {/* Memakan 2/3 lebar pada layar besar */}
-                         <div className="bg-white p-6 rounded-xl shadow-md">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Modules & Lessons</h2>
-                            {courseDetails.modules && courseDetails.modules.length > 0 ? (
-                                <div className="space-y-6">
-                                    {courseDetails.modules.map(module => (
-                                        <div key={module.id} className="border border-gray-200 p-4 rounded-lg bg-gray-50">
-                                            {/* PERUBAHAN: Modul lebih menonjol */}
-                                            <h3 className="text-xl font-bold text-gray-800 mb-2 border-b pb-2 border-gray-200">
-                                                {module.title}
-                                            </h3>
-                                            <p className="text-sm text-gray-600 mb-3">{module.description || '-'}</p>
-                                            
-                                            {module.lessons && module.lessons.length > 0 ? (
-                                                <div className="mt-3 ml-2 border-l pl-3">
-                                                    <h4 className="text-lg font-semibold text-gray-700 mb-2">Lessons in this Module:</h4> {/* PERUBAHAN: Label lebih jelas */}
-                                                    <ul className="space-y-3">
-                                                        {module.lessons.map(lesson => (
-                                                            <li key={lesson.id} className="bg-white p-3 rounded-md shadow-sm">
-                                                                <Link
-                                                                    to={`/course/${courseId}/lesson/${lesson.id}`}
-                                                                    className="block font-medium text-gray-800 hover:text-purple-700 transition-colors"
-                                                                >
-                                                                    {lesson.title} (Order: {lesson.order_in_module})
-                                                                </Link>
-                                                                {lesson.pdf_url && (
-                                                                    <p className="text-xs text-blue-600 truncate mb-1">
-                                                                        <a href={lesson.pdf_url} target="_blank" rel="noopener noreferrer">PDF: {lesson.pdf_url.split('/').pop()}</a>
-                                                                    </p>
-                                                                )}
-                                                                
-                                                                {lesson.lesson_materials && lesson.lesson_materials.length > 0 ? ( // PERUBAHAN: Hanya tampilkan jika ada materi
-                                                                    <div className="mt-2 text-xs">
-                                                                        <h5 className="font-semibold text-gray-700 mb-1">Materials in this Lesson:</h5> {/* PERUBAHAN: Label lebih jelas */}
-                                                                        <ul className="space-y-1">
-                                                                            {lesson.lesson_materials.map(lm => (
-                                                                                <li key={lm.material_id}>
-                                                                                    {lm.materials ? (
-                                                                                        <div className="flex items-center space-x-1">
-                                                                                            {lm.materials.content_type === 'image' && <PhotoIcon className="h-4 w-4 text-green-500" />}
-                                                                                            {lm.materials.content_type === 'video_url' && <PlayCircleIcon className="h-4 w-4 text-red-500" />}
-                                                                                            {lm.materials.content_type === 'text' && <DocumentTextIcon className="h-4 w-4 text-blue-500" />}
-                                                                                            {lm.materials.content_type === 'script' && <CodeBracketIcon className="h-4 w-4 text-yellow-500" />}
-                                                                                            {lm.materials.content_type === 'pdf' && <DocumentIcon className="h-4 w-4 text-purple-500" />}
-                                                                                            <span>{lm.materials.title} ({lm.materials.content_type.replace('_', ' ')})</span>
-                                                                                            {lm.order_in_lesson ? ` (Order: ${lm.order_in_lesson})` : ''}
-                                                                                            {lm.materials.content_url && (
-                                                                                                <a href={lm.materials.content_url} target="_blank" rel="noopener noreferrer" className="ml-1 text-blue-500 hover:underline">View</a>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    ) : (
-                                                                                        'Unknown Material'
-                                                                                    )}
-                                                                                </li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    </div>
-                                                                ) : (
-                                                                    <p className="text-gray-500 italic mt-2">No materials found for this lesson.</p> // PERUBAHAN: Pesan jika tidak ada materi
-                                                                )}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            ) : (
-                                                <p className="text-gray-600 italic mt-2">No lessons found for this module.</p>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-gray-600 italic">No modules found for this course.</p>
-                            )}
-                        </div>
+                    <div className="lg:col-span-2">
+                           <div className="bg-white p-6 rounded-xl shadow-md">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4">Modules & Lessons</h2>
+                                {courseDetails.modules && courseDetails.modules.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {courseDetails.modules.map(module => (
+                                            <div key={module.id} className="border border-gray-200 p-4 rounded-lg bg-gray-50">
+                                                <h3 className="text-xl font-bold text-gray-800 mb-2 border-b pb-2 border-gray-200">
+                                                    {module.title}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 mb-3">{module.description || '-'}</p>
+                                                
+                                                {module.lessons && module.lessons.length > 0 ? (
+                                                    <div className="mt-3 ml-2 border-l pl-3">
+                                                        <h4 className="text-lg font-semibold text-gray-700 mb-2">Lessons in this Module:</h4>
+                                                        <ul className="space-y-3">
+                                                            {module.lessons.map(lesson => (
+                                                                // PERBAIKAN: Menambahkan 'key' prop di sini
+                                                                <li key={lesson.id} className="bg-white p-3 rounded-md shadow-sm">
+                                                                    <Link
+                                                                        to={`/course/${courseId}/lesson/${lesson.id}`}
+                                                                        className="block font-medium text-gray-800 hover:text-purple-700 transition-colors"
+                                                                    >
+                                                                        {lesson.title} (Order: {lesson.order_in_module})
+                                                                    </Link>
+                                                                    {lesson.pdf_url && (
+                                                                        <p className="text-xs text-blue-600 truncate mb-1">
+                                                                            <a href={lesson.pdf_url} target="_blank" rel="noopener noreferrer">PDF: {lesson.pdf_url.split('/').pop()}</a>
+                                                                        </p>
+                                                                    )}
+                                                                    
+                                                                    {lesson.lesson_materials && lesson.lesson_materials.length > 0 ? (
+                                                                        <div className="mt-2 text-xs">
+                                                                            <h5 className="font-semibold text-gray-700 mb-1">Materials in this Lesson:</h5>
+                                                                            <ul className="space-y-1">
+                                                                                {lesson.lesson_materials.map(lm => (
+                                                                                    // 'key' prop untuk materi
+                                                                                    <li key={lm.material_id}>
+                                                                                        {lm.materials ? (
+                                                                                            <div className="flex items-center space-x-1">
+                                                                                                {lm.materials.content_type === 'image' && <PhotoIcon className="h-4 w-4 text-green-500" />}
+                                                                                                {lm.materials.content_type === 'video_url' && <PlayCircleIcon className="h-4 w-4 text-red-500" />}
+                                                                                                {lm.materials.content_type === 'text' && <DocumentTextIcon className="h-4 w-4 text-blue-500" />}
+                                                                                                {lm.materials.content_type === 'script' && <CodeBracketIcon className="h-4 w-4 text-yellow-500" />}
+                                                                                                {lm.materials.content_type === 'pdf' && <DocumentIcon className="h-4 w-4 text-purple-500" />}
+                                                                                                <span>{lm.materials.title} ({lm.materials.content_type.replace('_', ' ')})</span>
+                                                                                                {lm.order_in_lesson ? ` (Order: ${lm.order_in_lesson})` : ''}
+                                                                                                {lm.materials.content_url && (
+                                                                                                    <a href={lm.materials.content_url} target="_blank" rel="noopener noreferrer" className="ml-1 text-blue-500 hover:underline">View</a>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            'Unknown Material'
+                                                                                        )}
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-gray-500 italic mt-2">No materials found for this lesson.</p>
+                                                                    )}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-gray-600 italic mt-2">No lessons found for this module.</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-600 italic">No modules found for this course.</p>
+                                )}
+                            </div>
                     </div>
                 </div>
             </div>

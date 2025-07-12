@@ -18,11 +18,11 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Dashboard', icon: HomeIcon, path: '/Dashboard' },
     { name: 'Material', icon: BookOpenIcon, path: '/material' },
-    { name: 'Quiz', icon: AcademicCapIcon, path: '/quiz' },
+    { name: 'Quiz', icon: AcademicCapIcon, path: '/quizzes' },
     { name: 'Leaderboard', icon: TrophyIcon, path: '/leaderboard' },
-    { name: 'Discussion', icon: ChatBubbleLeftRightIcon, path: '/discussion' },
+    { name: 'Discussion', icon: ChatBubbleLeftRightIcon, path: '/discussions' },
     { name: 'History', icon: ClockIcon, path: '/history' },
-    { name: 'Bookmark', icon: BookmarkIcon, path: '/bookmark' },
+    { name: 'Bookmark', icon: BookmarkIcon, path: '/bookmarks' },
     { name: 'Settings', icon: Cog6ToothIcon, path: '/settings' },
   ];
 

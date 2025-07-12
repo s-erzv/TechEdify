@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [isReady, setIsReady] = useState(false);
+  const [profile, setProfile] = useState(null);
 
 const fetchAndSetUserProfile = async (supabaseUser) => {
   console.log("剥 fetchAndSetUserProfile CALLED with:", supabaseUser);

@@ -1,4 +1,3 @@
-// src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Auth from './pages/Auth';
@@ -17,17 +16,21 @@ import Courses from './pages/admin/Courses'
 import MaterialsPage from './pages/Material';
 import CourseDetailsPage from './pages/CourseDetailsPage';
 import LessonViewerPage from './pages/LessonViewerPage';
-// import CourseLayout from './components/CourseLayout'; // <--- HAPUS BARIS INI!
+import QuizPage from './pages/QuizPage'; 
+import QuizListPage from './pages/QuizListPage';
+import LeaderboardPage from './pages/LeaderboardPage'; 
+import DiscussionListPage from './pages/DiscussionListPage'; 
+import DiscussionDetailPage from './pages/DiscussionDetailPage';
+import CreateDiscussionPage from './pages/CreateDiscussionPage'; 
+import HistoryPage from './pages/HistoryPage'; 
+import BookmarkPage from './pages/BookmarkPage';
+import SettingsPage from './pages/SettingsPage'; 
 
-// Jika AuthProvider dan TextProvider ada, pastikan diimpor
 import { AuthProvider } from './context/AuthContext';
-// import { TextProvider } from './components/TextContext'; // Hapus ini juga jika tidak dipakai
 
 function App() {
   return (
-    <AuthProvider> {/* Pastikan AuthProvider membungkus semua Routes */}
-      {/* Hapus TextProvider jika sudah tidak dipakai */}
-      {/* <TextProvider> */}
+    <AuthProvider> 
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/Auth" element={<Auth />} />
@@ -44,21 +47,72 @@ function App() {
             </AuthGuard>
           } />
 
-          {/* Rute untuk Course Details Page */}
           <Route path="/course/:courseId" element={
             <AuthGuard>
               <CourseDetailsPage />
             </AuthGuard>
           } />
 
-          {/* Rute untuk Lesson Viewer Page */}
           <Route path="/course/:courseId/lesson/:lessonId" element={
             <AuthGuard>
               <LessonViewerPage />
             </AuthGuard>
           } />
 
-          {/* Rute Admin */}
+          <Route path="/quiz/:quizId" element={
+            <AuthGuard>
+              <QuizPage />
+            </AuthGuard>
+          } />
+
+          <Route path="/quizzes" element={
+            <AuthGuard>
+              <QuizListPage />
+            </AuthGuard>
+          } />
+
+          <Route path="/leaderboard" element={
+            <AuthGuard>
+              <LeaderboardPage /> 
+            </AuthGuard>
+          } />
+
+           {/* Rute baru untuk Diskusi */}
+          <Route path="/discussions" element={
+            <AuthGuard>
+              <DiscussionListPage /> 
+            </AuthGuard>
+          } />
+          <Route path="/discussions/:discussionId" element={
+            <AuthGuard>
+              <DiscussionDetailPage /> 
+            </AuthGuard>
+          } />
+
+          <Route path="/discussions/new" element={
+            <AuthGuard>
+              <CreateDiscussionPage /> 
+            </AuthGuard>
+          } />
+
+          <Route path="/history" element={
+            <AuthGuard>
+              <HistoryPage /> 
+            </AuthGuard>
+          } />
+
+          <Route path="/bookmarks" element={
+            <AuthGuard>
+              <BookmarkPage /> 
+            </AuthGuard>
+          } />
+
+          <Route path="/settings" element={
+            <AuthGuard>
+              <SettingsPage /> 
+            </AuthGuard>
+          } />
+
           <Route path="/admin" element={
             <AdminGuard>
               <AdminLayout />
@@ -74,10 +128,8 @@ function App() {
             <Route path="statistics" element={<Statistics />} />
           </Route>
 
-          {/* Fallback Route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      {/* </TextProvider> */}
     </AuthProvider>
   );
 }
