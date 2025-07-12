@@ -1,143 +1,71 @@
+// frontend/src/components/SidebarAdmin.jsx
 import { Link, useLocation } from 'react-router-dom';
+import React from 'react'; 
 
-export default function Sidebar() {
+// Import Heroicons yang akan digunakan
+import {
+  ChartBarIcon, // Untuk Dashboard
+  UsersIcon,    // Untuk Manage Users
+  BookOpenIcon, // Untuk Manage Courses & Manage Materials
+  CubeIcon,     // Untuk Manage Modules
+  DocumentTextIcon, // Untuk Manage Lessons
+  AcademicCapIcon, // Untuk Manage Quizzes
+  ArrowRightOnRectangleIcon // Untuk Go to User Dashboard
+} from '@heroicons/react/24/outline'; 
+
+export default function SidebarAdmin() { 
   const location = useLocation();
-  //const [activeMenu, setActiveMenu] = useState(''); 
 
-  const handleItemClick = (path) => {
-  };
+  const navItems = [
+    { name: 'Dashboard', icon: ChartBarIcon, path: '/admin/dashboard' },
+    { name: 'Manage Users', icon: UsersIcon, path: '/admin/users' },
+    { name: 'Manage Courses', icon: BookOpenIcon, path: '/admin/courses' },
+    { name: 'Manage Modules', icon: CubeIcon, path: '/admin/modules' },
+    { name: 'Manage Lessons', icon: DocumentTextIcon, path: '/admin/lessons' },
+    { name: 'Manage Materials', icon: BookOpenIcon, path: '/admin/materials' },
+    { name: 'Manage Quizzes', icon: AcademicCapIcon, path: '/admin/quizzes' },
+    { name: 'User Stats', icon: ChartBarIcon, path: '/admin/statistics' }, 
+  ];
 
   return (
-    <div className="w-64 bg-emerald-800 text-white flex flex-col p-4 shadow-lg"> {/* MODIFIKASI DISINI */}
+    // Menggunakan bg-emerald-800 untuk light mode, dan dark:bg-adminDark-bg-primary untuk dark mode
+    <div className="w-64 bg-emerald-800 text-white flex flex-col p-4 shadow-lg dark:bg-adminDark-bg-primary">
       <div className="text-2xl font-bold my-8 text-center">
-        Tech Edify
+        Tech Edify Admin
       </div>
       <nav className="flex-1">
         <ul>
-          {/* Dashboard */}
-          <li className="mb-2">
+          {navItems.map((item) => (
+            <li key={item.name} className="mb-2">
+              <Link
+                to={item.path}
+                className={`flex items-center p-3 rounded-lg transition-colors duration-200 
+                  ${location.pathname === item.path 
+                    // Item aktif: bg-emerald-600 untuk light, dark:bg-adminDark-accent-green untuk dark
+                    ? 'bg-emerald-600 text-white font-semibold dark:bg-adminDark-accent-green dark:text-white' 
+                    // Default & hover: text-gray-200 untuk light, dark:text-gray-300 & dark:hover:bg-adminDark-bg-tertiary untuk dark
+                    : 'hover:bg-emerald-700 text-gray-200 dark:text-gray-300 dark:hover:bg-adminDark-bg-tertiary dark:hover:text-white' 
+                  }`}
+              >
+                <item.icon className="h-5 w-5 mr-3" /> 
+                {item.name}
+              </Link>
+            </li>
+          ))}
+          {/* Tambah tombol/link menuju User Dashboard */}
+          <li className="mt-6 mb-2 pt-4 border-t border-emerald-700 dark:border-adminDark-bg-tertiary"> {/* Border di dark mode */}
             <Link
-              to="/admin/dashboard"
-              onClick={() => handleItemClick('/admin/dashboard')}
-              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/dashboard'
-                  ? 'bg-emerald-600 text-white font-semibold' // Latar belakang item aktif: hijau sedang
-                  : 'hover:bg-emerald-700 text-gray-200' // Latar belakang hover: hijau sedikit lebih gelap, warna teks default
-              }`}
+              to="/dashboard" 
+              className="flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-emerald-700 text-gray-200 dark:text-gray-300 dark:hover:bg-adminDark-bg-tertiary dark:hover:text-white"
             >
-              <i className="fas fa-chart-line mr-3"></i>
-              Dashboard
-            </Link>
-          </li>
-          {/* Manage Users */}
-          <li className="mb-2">
-            <Link
-              to="/admin/users"
-              onClick={() => handleItemClick('/admin/users')}
-              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/users'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'hover:bg-emerald-700 text-gray-200'
-              }`}
-            >
-              <i className="fas fa-users mr-3"></i>
-              Manage Users
-            </Link>
-          </li>
-          {/* Manage Coursess */}
-          <li className="mb-2">
-            <Link
-              to="/admin/courses"
-              onClick={() => handleItemClick('/admin/courses')}
-              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/courses'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'hover:bg-emerald-700 text-gray-200'
-              }`}
-            >
-              <i className="fas fa-cube mr-3"></i>
-              Manage Courses
-            </Link>
-          </li>
-          {/* Manage Modules */}
-          <li className="mb-2">
-            <Link
-              to="/admin/modules"
-              onClick={() => handleItemClick('/admin/modules')}
-              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/modules'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'hover:bg-emerald-700 text-gray-200'
-              }`}
-            >
-              <i className="fas fa-cube mr-3"></i>
-              Manage Modules
-            </Link>
-          </li>
-          {/* Manage Lessons */}
-          <li className="mb-2">
-            <Link
-              to="/admin/lessons"
-              onClick={() => handleItemClick('/admin/lessons')}
-              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/lessons'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'hover:bg-emerald-700 text-gray-200'
-              }`}
-            >
-              <i className="fas fa-file-alt mr-3"></i>
-              Manage Lessons
-            </Link>
-          </li>
-          {/* Manage Materials */}
-          <li className="mb-2">
-            <Link
-              to="/admin/materials"
-              onClick={() => handleItemClick('/admin/materials')}
-              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/materials'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'hover:bg-emerald-700 text-gray-200'
-              }`}
-            >
-              <i className="fas fa-book-open mr-3"></i>
-              Manage Materials
-            </Link>
-          </li>
-          {/* Manage Quizzes */}
-          <li className="mb-2">
-            <Link
-              to="/admin/quizzes"
-              onClick={() => handleItemClick('/admin/quizzes')}
-              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/quizzes'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'hover:bg-emerald-700 text-gray-200'
-              }`}
-            >
-              <i className="fas fa-question-circle mr-3"></i>
-              Manage Quizzes
-            </Link>
-          </li>
-          {/* User Stats */}
-          <li className="mb-2">
-            <Link
-              to="/admin/statistics"
-              onClick={() => handleItemClick('/admin/statistics')}
-              className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                location.pathname === '/admin/statistics'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'hover:bg-emerald-700 text-gray-200'
-              }`}
-            >
-              <i className="fas fa-chart-pie mr-3"></i>
-              User Stats
+              <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" /> 
+              Go to User Dashboard
             </Link>
           </li>
         </ul>
       </nav>
-      {/* Mengubah warna border footer sidebar menjadi emerald-700 */}
-      <div className="mt-auto pt-4 border-t border-emerald-700 text-center text-gray-300 text-sm"> {/* MODIFIKASI DISINI */}
+      {/* Mengubah warna border footer sidebar menjadi abu-abu gelap untuk dark mode */}
+      <div className="mt-auto pt-4 border-t border-emerald-700 text-center text-gray-300 text-sm dark:border-adminDark-bg-tertiary dark:text-gray-400">
         © 2025 Tech Edify
       </div>
     </div>

@@ -1,36 +1,43 @@
 // frontend/src/pages/admin/Lessons.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabaseClient'; // Pastikan path ini benar
-import AdminLayout from '../../components/AdminLayout'; // Jika Anda menggunakan AdminLayout di sini
+import { supabase } from '../../lib/supabaseClient'; 
+// import AdminLayout from '../../components/AdminLayout'; // Hapus import ini
+// import AuthContext jika tidak digunakan untuk header admin di sini
+// import { AuthContext } from '../../context/AuthContext'; 
 import {
     MagnifyingGlassIcon,
     ChevronDownIcon,
-    PencilSquareIcon, // Untuk edit
-    TrashIcon, // Untuk delete
-    PlusIcon, // Untuk tombol tambah
-    XMarkIcon, // Untuk tombol close di modal
-    ArrowLeftIcon, // Untuk pagination
-    ArrowRightIcon, // Untuk pagination
-    BellIcon, // Untuk header
-    BookOpenIcon, // Icon untuk Lesson
-    DocumentIcon, // Icon untuk PDF, diganti dari DocumentPdfIcon
-    EyeIcon, // Untuk view material
-    PhotoIcon, // Untuk image type
-    PlayCircleIcon, // Untuk video type
-    DocumentTextIcon, // Untuk text type
-    CodeBracketIcon, // Untuk script type
-    FolderPlusIcon // <=== BARU: Icon untuk menambah materi dari pelajaran
-} from '@heroicons/react/24/outline'; // Pastikan semua ikon diimpor
+    PencilSquareIcon, 
+    TrashIcon, 
+    EyeIcon, 
+    PlusIcon, 
+    XMarkIcon, 
+    ArrowLeftIcon, 
+    ArrowRightIcon, 
+    BellIcon, // Tidak digunakan jika header dihapus
+    BookOpenIcon, 
+    DocumentIcon, 
+    PhotoIcon, 
+    PlayCircleIcon, 
+    DocumentTextIcon, 
+    CodeBracketIcon, 
+    FolderPlusIcon 
+} from '@heroicons/react/24/outline'; 
 
 export default function AdminManageLessons() {
+    // Jika header admin dihapus, user dan profile dari AuthContext tidak diperlukan di sini
+    // const { user, profile } = useContext(AuthContext); 
+    // const adminUserName = profile?.username || profile?.full_name || user?.email?.split('@')[0] || 'Admin';
+    // const adminAvatarUrl = profile?.avatar_url || '/default-admin-avatar.jpg';
+
     const [lessons, setLessons] = useState([]);
-    const [modules, setModules] = useState([]); // State untuk daftar modul
-    const [materialsList, setMaterialsList] = useState([]); // State untuk daftar materi (semua materi yang tersedia)
+    const [modules, setModules] = useState([]); 
+    const [materialsList, setMaterialsList] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterModuleId, setFilterModuleId] = useState(''); // Filter berdasarkan modul
+    const [filterModuleId, setFilterModuleId] = useState(''); 
     const [currentPage, setCurrentPage] = useState(1);
     const [lessonsPerPage] = useState(10);
     const [totalLessonsCount, setTotalLessonsCount] = useState(0);
@@ -39,15 +46,15 @@ export default function AdminManageLessons() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
-    const [lessonToEdit, setLessonToEdit] = useState(null); // Menyimpan data pelajaran yang akan diedit
-    const [lessonToDelete, setLessonToDelete] = useState(null); // Menyimpan data pelajaran yang akan dihapus
+    const [lessonToEdit, setLessonToEdit] = useState(null); 
+    const [lessonToDelete, setLessonToDelete] = useState(null); 
 
     // State untuk form tambah/edit pelajaran
     const [newLessonData, setNewLessonData] = useState({
         title: '',
         module_id: '',
-        pdf_url: '', // PDF URL legacy
-        associated_materials: [], // Array of { material_id: uuid, order_in_lesson: int }
+        pdf_url: '', 
+        associated_materials: [], 
         order_in_module: 0,
     });
 
@@ -61,16 +68,6 @@ export default function AdminManageLessons() {
         content_text: '',
         file: null,
     });
-
-    // Data dummy admin user untuk header (ini harusnya dari AuthContext Anda)
-    const adminUser = {
-        user_metadata: {
-            first_name: "Admin",
-            avatar_url: "/default-avatar.jpg"
-        },
-        email: "techedifysma@gmail.com"
-    };
-    const adminUserName = adminUser?.user_metadata?.first_name || adminUser?.email?.split('@')[0] || 'Admin';
 
     // --- Fungsi untuk Fetch Pelajaran (Read) ---
     const fetchLessons = async () => {
@@ -121,7 +118,7 @@ export default function AdminManageLessons() {
             setTotalLessonsCount(count || 0);
             console.log("Fetched lessons data:", sortedLessons);
         } catch (err) {
-            setError('Gagal memuat daftar pelajaran: ' + err.message);
+            setError('Failed to load lessons list: ' + err.message);
             setLessons([]);
             setTotalLessonsCount(0);
         } finally {
@@ -221,18 +218,18 @@ export default function AdminManageLessons() {
                 content_type: newMaterialOnFlyData.content_type,
                 content_url: finalContentUrl,
                 content_text: newMaterialOnFlyData.content_text,
-            }).select('id').single(); // Dapatkan ID materi yang baru dibuat
+            }).select('id').single(); 
 
             if (insertError) throw insertError;
 
-            alert('Materi baru berhasil dibuat!');
-            setShowAddMaterialNestedModal(false); // Tutup modal materi
+            alert('New material successfully created!');
+            setShowAddMaterialNestedModal(false); 
             fetchMaterialsList(); // Refresh daftar materi di dropdown
             
-            return materialData.id; // Kembalikan ID materi yang baru dibuat
+            return materialData.id; 
         } catch (err) {
-            setError('Gagal membuat materi baru: ' + err.message);
-            alert('Gagal membuat materi baru: ' + err.message);
+            setError('Failed to create new material: ' + err.message);
+            alert('Failed to create new material: ' + err.message);
             return null;
         }
     };
@@ -317,12 +314,12 @@ export default function AdminManageLessons() {
                 if (insertAssociatedError) throw insertAssociatedError;
             }
 
-            alert('Pelajaran berhasil ditambahkan!');
+            alert('Lesson successfully added!');
             closeAddModal();
             fetchLessons(); // Refresh daftar pelajaran
         } catch (err) {
-            setError('Gagal menambahkan pelajaran: ' + err.message);
-            alert('Gagal menambahkan pelajaran: ' + err.message);
+            setError('Failed to add lesson: ' + err.message);
+            alert('Failed to add lesson: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -418,12 +415,12 @@ export default function AdminManageLessons() {
             }
 
 
-            alert('Pelajaran berhasil diperbarui!');
+            alert('Lesson successfully updated!');
             closeEditModal();
             fetchLessons(); // Refresh daftar pelajaran untuk menampilkan perubahan lengkap
         } catch (err) {
-            setError('Gagal memperbarui pelajaran: ' + err.message);
-            alert('Gagal memperbarui pelajaran: ' + err.message);
+            setError('Failed to update lesson: ' + err.message);
+            alert('Failed to update lesson: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -454,12 +451,12 @@ export default function AdminManageLessons() {
 
             if (deleteError) throw deleteError;
 
-            alert('Pelajaran berhasil dihapus!');
+            alert('Lesson successfully deleted!');
             closeDeleteConfirm();
             fetchLessons(); // Refresh daftar pelajaran
         } catch (err) {
-            setError('Gagal menghapus pelajaran: ' + err.message);
-            alert('Gagal menghapus pelajaran: ' + err.message);
+            setError('Failed to delete lesson: ' + err.message);
+            alert('Failed to delete lesson: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -468,55 +465,47 @@ export default function AdminManageLessons() {
     // --- Rendering UI ---
     if (loading && lessons.length === 0 && modules.length === 0 && materialsList.length === 0) {
         return (
-            <div className="flex-grow h-screen flex justify-center items-center text-gray-700 text-xl">
-                <i className="fas fa-spinner fa-spin mr-2"></i> Memuat data pelajaran...
+            <div className="flex-grow h-screen flex justify-center items-center text-gray-700 text-xl dark:text-gray-300">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-700 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading lesson data...
             </div>
         );
     }
 
     if (error && lessons.length === 0 && modules.length === 0 && materialsList.length === 0) {
         return (
-            <div className="flex-grow h-screen flex justify-center items-center text-red-600 text-xl">
-                <i className="fas fa-exclamation-triangle mr-2"></i> Error: {error}
+            <div className="flex-grow h-screen flex justify-center items-center text-red-600 text-xl dark:text-red-400">
+                <svg className="h-6 w-6 mr-2 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Error: {error}
             </div>
         );
     }
 
     return (
-        <div className="flex-grow h-[95vh] scrollbar-hide overflow-y-auto rounded-xl p-6 bg-[#F9F9FB]">
-            <header className="sticky top-0 z-10 bg-[#F9F9FB] flex justify-between items-center p-6 mb-6 shadow-sm rounded-xl">
-                <h1 className="text-3xl font-bold text-gray-900">Hi, {adminUserName}!</h1>
-                <div className="flex items-center space-x-4">
-                    <div className="relative">
-                        <BellIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
-                        <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <img
-                            className="h-10 w-10 rounded-full object-cover"
-                            src={adminUser?.user_metadata?.avatar_url || '/default-avatar.jpg'}
-                            alt="Admin Avatar"
-                        />
-                        <ChevronDownIcon className="h-5 w-5 text-gray-500 cursor-pointer" />
-                    </div>
-                </div>
-            </header>
+        <div className="flex-grow h-[95vh] scrollbar-hide overflow-y-auto rounded-xl p-6 bg-[#F9F9FB] dark:bg-adminDark-bg-secondary">
+            {/* Header Admin Page */}
+            {/* Header dihapus karena instruksi pengguna */}
 
-            <div className="bg-white p-4 mb-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div className="bg-white p-4 mb-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-2 gap-4 items-center dark:bg-adminDark-bg-tertiary dark:shadow-none">
                 <div className="relative">
                     <input
                         type="text"
                         placeholder="Search lessons by title or PDF URL"
-                        className="w-full py-2 pl-10 pr-4 rounded-full bg-gray-100 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400"
+                        className="w-full py-2 pl-10 pr-4 rounded-full bg-gray-100 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-adminDark-accent-green"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 dark:text-gray-500" />
                 </div>
 
                 <div className="relative flex space-x-4">
                     <select
-                        className="w-full py-2 pl-4 pr-10 rounded-full bg-gray-100 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 cursor-pointer appearance-none"
+                        className="w-full py-2 pl-4 pr-10 rounded-full bg-gray-100 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 cursor-pointer appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-adminDark-accent-green"
                         value={filterModuleId}
                         onChange={(e) => {
                             setFilterModuleId(e.target.value);
@@ -528,12 +517,12 @@ export default function AdminManageLessons() {
                             <option key={module.id} value={module.id}>{module.title} ({module.courses ? module.courses.title : 'No Course'})</option>
                         ))}
                     </select>
-                    <ChevronDownIcon className="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <ChevronDownIcon className="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none dark:text-gray-500" />
                     
                     {/* Tombol Tambah Pelajaran */}
                     <button
                         onClick={openAddModal}
-                        className="bg-purple-600 text-white rounded-full p-2 hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center min-w-[40px] h-[40px]"
+                        className="bg-purple-600 text-white rounded-full p-2 hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center min-w-[40px] h-[40px] dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                         title="Add New Lesson"
                     >
                         <PlusIcon className="h-5 w-5" />
@@ -541,23 +530,26 @@ export default function AdminManageLessons() {
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-md overflow-x-auto">
+            <div className="bg-white p-6 rounded-xl shadow-md overflow-x-auto dark:bg-adminDark-bg-tertiary dark:shadow-none">
                 {/* Loading overlay saat operasi CRUD berlangsung */}
                 {loading && lessons.length > 0 && (
-                    <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-75 z-20 rounded-xl">
-                        <i className="fas fa-spinner fa-spin text-purple-600 text-4xl"></i>
+                    <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-75 z-20 rounded-xl dark:bg-gray-900 dark:bg-opacity-75">
+                        <svg className="animate-spin -ml-1 mr-3 h-8 w-8 text-adminDark-accent-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                     </div>
                 )}
                 {/* Pesan error umum */}
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 dark:bg-red-700 dark:border-red-600 dark:text-white" role="alert">
                         <strong className="font-bold">Error!</strong>
                         <span className="block sm:inline"> {error}</span>
                     </div>
                 )}
 
-                <table className="min-w-full divide-y divide-gray-300 text-sm">
-                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
+                <table className="min-w-full divide-y divide-gray-300 text-sm dark:divide-gray-700">
+                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider dark:bg-gray-800 dark:text-gray-300">
                         <tr>
                             <th className="px-6 py-3 text-left">Title</th>
                             <th className="px-6 py-3 text-left">Module</th>
@@ -569,15 +561,15 @@ export default function AdminManageLessons() {
                             <th className="px-6 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-200 dark:bg-adminDark-bg-tertiary dark:divide-gray-700">
                         {lessons.length > 0 ? (
                             lessons.map((lesson) => (
-                                <tr key={lesson.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-semibold">{lesson.title}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{lesson.modules ? lesson.modules.title : 'N/A'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{lesson.modules && lesson.modules.courses ? lesson.modules.courses.title : 'N/A'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{lesson.order_in_module}</td>
-                                    <td className="px-6 py-4 text-gray-700 max-w-xs">
+                                <tr key={lesson.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150">
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-semibold dark:text-white">{lesson.title}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">{lesson.modules ? lesson.modules.title : 'N/A'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">{lesson.modules && lesson.modules.courses ? lesson.modules.courses.title : 'N/A'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">{lesson.order_in_module}</td>
+                                    <td className="px-6 py-4 text-gray-700 max-w-xs dark:text-gray-300">
                                         {lesson.lesson_materials && lesson.lesson_materials.length > 0 ? (
                                             <ul className="list-disc list-inside text-xs">
                                                 {lesson.lesson_materials.map(lm => (
@@ -591,23 +583,23 @@ export default function AdminManageLessons() {
                                             '-'
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-blue-600 hover:underline max-w-xs truncate">
+                                    <td className="px-6 py-4 text-blue-600 hover:underline max-w-xs truncate dark:text-blue-400 dark:hover:text-blue-300">
                                         {lesson.pdf_url ? <a href={lesson.pdf_url} target="_blank" rel="noopener noreferrer">{lesson.pdf_url.split('/').pop()}</a> : '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-gray-500">
+                                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                                         {new Date(lesson.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                     </td>
                                     <td className="px-6 py-4 text-right space-x-2">
                                         <button
                                             onClick={() => openEditModal(lesson)}
-                                            className="text-blue-600 hover:underline"
+                                            className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                                             title="Edit Lesson"
                                         >
                                             <PencilSquareIcon className="h-5 w-5 inline mr-1" />Edit
                                         </button>
                                         <button
                                             onClick={() => openDeleteConfirm(lesson)}
-                                            className="text-red-600 hover:underline"
+                                            className="text-red-600 hover:underline dark:text-red-500 dark:hover:text-red-400"
                                             title="Delete Lesson"
                                         >
                                             <TrashIcon className="h-5 w-5 inline mr-1" />Delete
@@ -617,7 +609,7 @@ export default function AdminManageLessons() {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="8" className="text-center py-4 text-gray-500">No lessons found.</td>
+                                <td colSpan="8" className="text-center py-4 text-gray-500 dark:text-gray-400">No lessons found.</td>
                             </tr>
                         )}
                     </tbody>
@@ -629,7 +621,7 @@ export default function AdminManageLessons() {
                     <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50"
+                        className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                         <ArrowLeftIcon className="h-4 w-4 inline" /> Prev
                     </button>
@@ -639,8 +631,8 @@ export default function AdminManageLessons() {
                             onClick={() => handlePageChange(i + 1)}
                             className={`px-4 py-2 text-sm border ${
                                 currentPage === i + 1
-                                    ? 'bg-purple-600 text-white border-purple-600'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                    ? 'bg-purple-600 text-white border-purple-600 dark:bg-adminDark-accent-green dark:text-white dark:border-adminDark-accent-green'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
                             }`}
                         >
                             {i + 1}
@@ -649,7 +641,7 @@ export default function AdminManageLessons() {
                     <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50"
+                        className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                         Next <ArrowRightIcon className="h-4 w-4 inline" />
                     </button>
@@ -658,31 +650,31 @@ export default function AdminManageLessons() {
 
             {/* --- Modal Tambah Pelajaran (Create) --- */}
             {showAddModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative">
-                        <button onClick={closeAddModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <button onClick={closeAddModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
-                        <h2 className="text-2xl font-bold mb-6 text-gray-800">Tambah Pelajaran Baru</h2>
+                        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Add New Lesson</h2>
                         <form onSubmit={handleCreateLesson}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-title">Title</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-title">Title</label>
                                 <input
                                     type="text"
                                     id="add-title"
                                     name="title"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newLessonData.title}
                                     onChange={handleInputChange}
                                     required
                                 />
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-module_id">Module</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-module_id">Module</label>
                                 <select
                                     id="add-module_id"
                                     name="module_id"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newLessonData.module_id}
                                     onChange={handleInputChange}
                                     required
@@ -695,14 +687,14 @@ export default function AdminManageLessons() {
                             </div>
 
                             {/* --- Bagian Pemilihan Materi Terhubung (Associated Materials) --- */}
-                            <div className="mb-4 border p-3 rounded-md bg-gray-50">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">Associated Materials</label>
+                            <div className="mb-4 border p-3 rounded-md bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300">Associated Materials</label>
                                 {newLessonData.associated_materials.map((item, index) => {
                                     const material = materialsList.find(mat => mat.id === item.material_id);
                                     return (
                                         <div key={index} className="flex items-center space-x-2 mb-2">
                                             <select
-                                                className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow"
+                                                className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                 value={item.material_id}
                                                 onChange={(e) => handleUpdateAssociatedMaterial(index, 'material_id', e.target.value)}
                                                 required
@@ -714,7 +706,7 @@ export default function AdminManageLessons() {
                                             </select>
                                             <input
                                                 type="number"
-                                                className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-20"
+                                                className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                 placeholder="Order"
                                                 value={item.order_in_lesson}
                                                 onChange={(e) => handleUpdateAssociatedMaterial(index, 'order_in_lesson', parseInt(e.target.value) || 0)}
@@ -722,7 +714,7 @@ export default function AdminManageLessons() {
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveAssociatedMaterial(index)}
-                                                className="text-red-500 hover:text-red-700"
+                                                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500"
                                             >
                                                 <XMarkIcon className="h-5 w-5" />
                                             </button>
@@ -731,15 +723,15 @@ export default function AdminManageLessons() {
                                 })}
                                 <button
                                     type="button"
-                                    onClick={() => handleAddAssociatedMaterial()} // Memanggil tanpa ID materi baru
-                                    className="mt-2 bg-green-500 hover:bg-green-600 text-white text-sm py-1 px-3 rounded"
+                                    onClick={() => handleAddAssociatedMaterial()} 
+                                    className="mt-2 bg-green-500 hover:bg-green-600 text-white text-sm py-1 px-3 rounded dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                                 >
                                     Add Existing Material
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setShowAddMaterialNestedModal(true)} // Tombol untuk modal materi on-the-fly
-                                    className="mt-2 ml-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm py-1 px-3 rounded flex items-center"
+                                    onClick={() => setShowAddMaterialNestedModal(true)} 
+                                    className="mt-2 ml-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm py-1 px-3 rounded flex items-center dark:bg-blue-600 dark:hover:bg-blue-700"
                                 >
                                     <FolderPlusIcon className="h-4 w-4 mr-1" /> Create New Material
                                 </button>
@@ -747,24 +739,24 @@ export default function AdminManageLessons() {
                             {/* --- Akhir Bagian Pemilihan Materi Terhubung --- */}
 
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-pdf_url">PDF URL (Legacy / Supplemental)</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-pdf_url">PDF URL (Legacy / Supplemental)</label>
                                 <input
                                     type="url"
                                     id="add-pdf_url"
                                     name="pdf_url"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newLessonData.pdf_url}
                                     onChange={handleInputChange}
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Optional: Provide a direct PDF URL if not using a material.</p>
+                                <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Optional: Provide a direct PDF URL if not using a material.</p>
                             </div>
                             <div className="mb-6">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-order_in_module">Order in Module</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-order_in_module">Order in Module</label>
                                 <input
                                     type="number"
                                     id="add-order_in_module"
                                     name="order_in_module"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newLessonData.order_in_module}
                                     onChange={handleInputChange}
                                     required
@@ -773,7 +765,7 @@ export default function AdminManageLessons() {
                             <div className="flex items-center justify-between">
                                 <button
                                     type="submit"
-                                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                                     disabled={loading}
                                 >
                                     {loading ? 'Adding...' : 'Add Lesson'}
@@ -781,7 +773,7 @@ export default function AdminManageLessons() {
                                 <button
                                     type="button"
                                     onClick={closeAddModal}
-                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                                     disabled={loading}
                                 >
                                     Cancel
@@ -792,33 +784,33 @@ export default function AdminManageLessons() {
                 </div>
             )}
 
-            {/* --- Modal Edit Pelajaran (Update) --- */}
-            {showEditModal && lessonToEdit && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative">
-                        <button onClick={closeEditModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+            {/* --- Modal Edit Modul (Update) --- */}
+            {showEditModal && lessonToEdit && ( // Menggunakan lessonToEdit
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <button onClick={closeEditModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
-                        <h2 className="text-2xl font-bold mb-6 text-gray-800">Edit Pelajaran</h2>
+                        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Edit Lesson</h2>
                         <form onSubmit={handleUpdateLesson}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-title">Title</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-title">Title</label>
                                 <input
                                     type="text"
                                     id="edit-title"
                                     name="title"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newLessonData.title}
                                     onChange={handleInputChange}
                                     required
                                 />
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-module_id">Module</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-module_id">Module</label>
                                 <select
                                     id="edit-module_id"
                                     name="module_id"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newLessonData.module_id}
                                     onChange={handleInputChange}
                                     required
@@ -831,14 +823,14 @@ export default function AdminManageLessons() {
                             </div>
 
                             {/* --- Bagian Pemilihan Materi Terhubung (Associated Materials) --- */}
-                            <div className="mb-4 border p-3 rounded-md bg-gray-50">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">Associated Materials</label>
+                            <div className="mb-4 border p-3 rounded-md bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300">Associated Materials</label>
                                 {newLessonData.associated_materials.map((item, index) => {
                                     const material = materialsList.find(mat => mat.id === item.material_id);
                                     return (
                                         <div key={index} className="flex items-center space-x-2 mb-2">
                                             <select
-                                                className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow"
+                                                className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                 value={item.material_id}
                                                 onChange={(e) => handleUpdateAssociatedMaterial(index, 'material_id', e.target.value)}
                                                 required
@@ -850,7 +842,7 @@ export default function AdminManageLessons() {
                                             </select>
                                             <input
                                                 type="number"
-                                                className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-20"
+                                                className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                 placeholder="Order"
                                                 value={item.order_in_lesson}
                                                 onChange={(e) => handleUpdateAssociatedMaterial(index, 'order_in_lesson', parseInt(e.target.value) || 0)}
@@ -858,7 +850,7 @@ export default function AdminManageLessons() {
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveAssociatedMaterial(index)}
-                                                className="text-red-500 hover:text-red-700"
+                                                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500"
                                             >
                                                 <XMarkIcon className="h-5 w-5" />
                                             </button>
@@ -867,15 +859,15 @@ export default function AdminManageLessons() {
                                 })}
                                 <button
                                     type="button"
-                                    onClick={() => handleAddAssociatedMaterial()}
-                                    className="mt-2 bg-green-500 hover:bg-green-600 text-white text-sm py-1 px-3 rounded"
+                                    onClick={() => handleAddAssociatedMaterial()} 
+                                    className="mt-2 bg-green-500 hover:bg-green-600 text-white text-sm py-1 px-3 rounded dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                                 >
                                     Add Existing Material
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setShowAddMaterialNestedModal(true)}
-                                    className="mt-2 ml-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm py-1 px-3 rounded flex items-center"
+                                    onClick={() => setShowAddMaterialNestedModal(true)} 
+                                    className="mt-2 ml-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm py-1 px-3 rounded flex items-center dark:bg-blue-600 dark:hover:bg-blue-700"
                                 >
                                     <FolderPlusIcon className="h-4 w-4 mr-1" /> Create New Material
                                 </button>
@@ -883,24 +875,24 @@ export default function AdminManageLessons() {
                             {/* --- Akhir Bagian Pemilihan Materi Terhubung --- */}
 
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-pdf_url">PDF URL (Legacy / Supplemental)</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-pdf_url">PDF URL (Legacy / Supplemental)</label>
                                 <input
                                     type="url"
                                     id="edit-pdf_url"
                                     name="pdf_url"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newLessonData.pdf_url}
                                     onChange={handleInputChange}
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Optional: Provide a direct PDF URL if not using a material.</p>
+                                <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Optional: Provide a direct PDF URL if not using a material.</p>
                             </div>
                             <div className="mb-6">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-order_in_module">Order in Module</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-order_in_module">Order in Module</label>
                                 <input
                                     type="number"
                                     id="edit-order_in_module"
                                     name="order_in_module"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newLessonData.order_in_module}
                                     onChange={handleInputChange}
                                     required
@@ -909,7 +901,7 @@ export default function AdminManageLessons() {
                             <div className="flex items-center justify-between">
                                 <button
                                     type="submit"
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                                     disabled={loading}
                                 >
                                     {loading ? 'Updating...' : 'Update Lesson'}
@@ -917,10 +909,10 @@ export default function AdminManageLessons() {
                                 <button
                                     type="button"
                                     onClick={closeEditModal}
-                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                                     disabled={loading}
                                 >
-                                    Batal
+                                    Cancel
                                 </button>
                             </div>
                         </form>
@@ -928,22 +920,22 @@ export default function AdminManageLessons() {
                 </div>
             )}
 
-            {/* --- Modal Konfirmasi Hapus Pelajaran (Delete) --- */}
-            {showDeleteConfirmationModal && lessonToDelete && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm relative text-center">
-                        <button onClick={closeDeleteConfirm} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+            {/* --- Modal Konfirmasi Hapus Modul (Delete) --- */}
+            {showDeleteConfirmationModal && moduleToDelete && ( // Menggunakan moduleToDelete
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm relative text-center dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <button onClick={closeDeleteConfirm} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
-                        <h2 className="text-xl font-bold mb-4 text-gray-800">Konfirmasi Penghapusan</h2>
-                        <p className="mb-6 text-gray-700">
-                            Apakah Anda yakin ingin menghapus pelajaran "<span className="font-semibold">{lessonToDelete.title}</span>"?
-                            Tindakan ini tidak dapat dibatalkan. Ini juga akan memutus hubungan dengan kuis yang terhubung ke pelajaran ini.
+                        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Confirm Deletion</h2>
+                        <p className="mb-6 text-gray-700 dark:text-gray-300">
+                            Are you sure you want to delete module "<span className="font-semibold">{moduleToDelete.title}</span>"?
+                            This action cannot be undone. This will also delete lessons and quizzes connected to this module.
                         </p>
                         <div className="flex justify-center space-x-4">
                             <button
-                                onClick={confirmDeleteLesson}
-                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                onClick={confirmDeleteModule}
+                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-red-700 dark:hover:bg-red-800"
                                 disabled={loading}
                             >
                                 {loading ? 'Deleting...' : 'Delete'}
@@ -951,10 +943,10 @@ export default function AdminManageLessons() {
                             <button
                                 type="button"
                                 onClick={closeDeleteConfirm}
-                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                                 disabled={loading}
                             >
-                                Batal
+                                Cancel
                             </button>
                         </div>
                     </div>
@@ -963,12 +955,12 @@ export default function AdminManageLessons() {
 
             {/* --- Modal Tambah Materi On-the-Fly (Nested Modal) --- */}
             {showAddMaterialNestedModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative">
-                        <button onClick={() => setShowAddMaterialNestedModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <button onClick={() => setShowAddMaterialNestedModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
-                        <h2 className="text-2xl font-bold mb-6 text-gray-800">Create New Material</h2>
+                        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Create New Material</h2>
                         <form onSubmit={async (e) => {
                             e.preventDefault();
                             setLoading(true);
@@ -979,34 +971,34 @@ export default function AdminManageLessons() {
                             setLoading(false);
                         }}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="new-material-title">Title</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="new-material-title">Title</label>
                                 <input
                                     type="text"
                                     id="new-material-title"
                                     name="title"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newMaterialOnFlyData.title}
                                     onChange={handleMaterialOnFlyInputChange}
                                     required
                                 />
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="new-material-description">Description</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="new-material-description">Description</label>
                                 <textarea
                                     id="new-material-description"
                                     name="description"
                                     rows="3"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newMaterialOnFlyData.description}
                                     onChange={handleMaterialOnFlyInputChange}
                                 ></textarea>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="new-material-content_type">Content Type</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="new-material-content_type">Content Type</label>
                                 <select
                                     id="new-material-content_type"
                                     name="content_type"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newMaterialOnFlyData.content_type}
                                     onChange={handleMaterialOnFlyInputChange}
                                 >
@@ -1020,24 +1012,24 @@ export default function AdminManageLessons() {
 
                             {newMaterialOnFlyData.content_type === 'image' || newMaterialOnFlyData.content_type === 'pdf' ? (
                                 <div className="mb-4">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="new-material-file">Upload File</label>
+                                    <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="new-material-file">Upload File</label>
                                     <input
                                         type="file"
                                         id="new-material-file"
                                         name="file"
-                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         onChange={handleMaterialOnFlyFileChange}
                                         required
                                     />
                                 </div>
                             ) : newMaterialOnFlyData.content_type === 'video_url' ? (
                                 <div className="mb-4">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="new-material-content_url">Video URL</label>
+                                    <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="new-material-content_url">Video URL</label>
                                     <input
                                         type="url"
                                         id="new-material-content_url"
                                         name="content_url"
-                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         value={newMaterialOnFlyData.content_url}
                                         onChange={handleMaterialOnFlyInputChange}
                                         placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
@@ -1048,14 +1040,14 @@ export default function AdminManageLessons() {
 
                             {newMaterialOnFlyData.content_type === 'text' || newMaterialOnFlyData.content_type === 'script' ? (
                                 <div className="mb-6">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="new-material-content_text">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="new-material-content_text">
                                         {newMaterialOnFlyData.content_type === 'text' ? 'Content Text' : 'Script Content'}
                                     </label>
                                     <textarea
                                         id="new-material-content_text"
                                         name="content_text"
                                         rows="6"
-                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-mono"
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-mono dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         value={newMaterialOnFlyData.content_text}
                                         onChange={handleMaterialOnFlyInputChange}
                                         required
@@ -1066,7 +1058,7 @@ export default function AdminManageLessons() {
                             <div className="flex items-center justify-between">
                                 <button
                                     type="submit"
-                                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                                     disabled={loading}
                                 >
                                     {loading ? 'Creating...' : 'Create & Add'}
@@ -1074,7 +1066,7 @@ export default function AdminManageLessons() {
                                 <button
                                     type="button"
                                     onClick={() => setShowAddMaterialNestedModal(false)}
-                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                                     disabled={loading}
                                 >
                                     Cancel

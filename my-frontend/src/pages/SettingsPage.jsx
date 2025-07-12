@@ -51,6 +51,10 @@ export default function SettingsPage() {
             if (fetchError) throw fetchError;
             if (setProfile) {
                 setProfile(data);
+                // --- LOGS BARU ---
+                console.log('Data Profil yang diatur ke Context:', data);
+                console.log('Avatar URL dari Context setelah fetch:', data.avatar_url);
+                // --- END LOGS ---
             } else {
                 // Fallback for local state if setProfile is not available
                 setFirstName(data.first_name || '');
@@ -67,6 +71,10 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (profile) {
+            // --- LOGS BARU ---
+            console.log('Profile dari AuthContext di useEffect:', profile);
+            console.log('Avatar URL dari AuthContext di useEffect:', profile.avatar_url);
+            // --- END LOGS ---
             setFirstName(profile.first_name || '');
             setLastName(profile.last_name || '');
             setUsername(profile.username || '');
@@ -105,8 +113,12 @@ export default function SettingsPage() {
         setError(null);
 
         const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Math.random().toString(36).substring(2, 15)}.${fileExt}`; 
-        const filePath = `avatars/${fileName}`; 
+        // --- PERBAIKAN DI SINI ---
+        // filePath seharusnya tidak perlu diawali 'avatars/' lagi karena sudah ada from('avatars')
+        const filePath = `${user.id}/${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        // --- END PERBAIKAN ---
+
+        console.log('File Path yang akan diunggah:', filePath); 
 
         try {
             const { error: uploadError } = await supabase.storage
@@ -128,7 +140,7 @@ export default function SettingsPage() {
 
             if (updateError) throw updateError;
 
-            await fetchUserProfile();
+            await fetchUserProfile(); // Panggil ulang untuk mendapatkan profil terbaru
             setSuccessMessage('Avatar updated successfully!');
 
         } catch (err) {
@@ -247,18 +259,18 @@ export default function SettingsPage() {
 
     return (
         <MainLayout>
-            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)] dark:bg-gray-900 transition-colors duration-300">
-                <header className="mb-8 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between dark:bg-gray-800">
+            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)] dark:bg-dark-bg-secondary transition-colors duration-300">
+                <header className="mb-8 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between dark:bg-dark-bg-tertiary">
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center dark:text-white">
-                        <Cog6ToothIcon className="h-8 w-8 mr-3 text-purple-600" /> Account Settings
+                        <Cog6ToothIcon className="h-8 w-8 mr-3 text-purple-600 dark:text-dark-accent-purple" /> Account Settings
                     </h1>
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Card 1: Profile Information */}
-                    <div className="bg-white p-6 rounded-xl shadow-md dark:bg-gray-800">
+                    <div className="bg-white p-6 rounded-xl shadow-md dark:bg-dark-bg-tertiary">
                         <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center dark:text-white">
-                            <UserCircleIcon className="h-7 w-7 mr-2 text-blue-500" /> Profile Information
+                            <UserCircleIcon className="h-7 w-7 mr-2 text-blue-500 dark:text-blue-400" /> Profile Information
                         </h2>
                         {successMessage && (
                             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 dark:bg-green-700 dark:border-green-600 dark:text-white" role="alert">
@@ -272,12 +284,12 @@ export default function SettingsPage() {
                                 <div className="flex items-center space-x-4">
                                     <div className="flex-shrink-0">
                                         {profile?.avatar_url ? (
-                                            <img src={profile.avatar_url} alt="Avatar" className="h-20 w-20 rounded-full object-cover border-2 border-purple-300 shadow-md" />
+                                            <img src={profile.avatar_url} alt="Avatar" className="h-20 w-20 rounded-full object-cover border-2 border-purple-300 shadow-md dark:border-dark-accent-purple" />
                                         ) : (
-                                            <UserCircleIcon className="h-20 w-20 text-gray-400" />
+                                            <UserCircleIcon className="h-20 w-20 text-gray-400 dark:text-gray-500" />
                                         )}
                                     </div>
-                                    <label htmlFor="avatar-upload" className="cursor-pointer bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center transition-colors duration-200">
+                                    <label htmlFor="avatar-upload" className="cursor-pointer bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center transition-colors duration-200 dark:bg-dark-accent-purple dark:hover:bg-purple-800">
                                         {uploadingAvatar ? (
                                             'Uploading...'
                                         ) : (
@@ -315,7 +327,7 @@ export default function SettingsPage() {
                                 <input
                                     type="text"
                                     id="firstName"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                     value={firstName}
                                     onChange={(e) => setFirstName(e.target.value)}
                                 />
@@ -325,7 +337,7 @@ export default function SettingsPage() {
                                 <input
                                     type="text"
                                     id="lastName"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                     value={lastName}
                                     onChange={(e) => setLastName(e.target.value)}
                                 />
@@ -335,7 +347,7 @@ export default function SettingsPage() {
                                 <input
                                     type="text"
                                     id="username"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                 />
@@ -343,7 +355,7 @@ export default function SettingsPage() {
                             <button
                                 type="submit"
                                 disabled={loading || uploadingAvatar}
-                                className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 dark:bg-purple-700 dark:hover:bg-purple-800"
+                                className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 dark:bg-dark-accent-purple dark:hover:bg-purple-800"
                             >
                                 {loading ? 'Saving...' : 'Update Profile'}
                             </button>
@@ -352,49 +364,49 @@ export default function SettingsPage() {
 
                     <div className="space-y-6">
                         {/* Card 3: Student Card */}
-                        <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-xl shadow-lg text-white font-sans relative overflow-hidden">
+                        <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-xl shadow-lg text-white font-sans relative overflow-hidden dark:bg-dark-bg-tertiary dark:shadow-none">
                             <IdentificationIcon className="absolute -right-5 -bottom-5 h-32 w-32 opacity-20 transform rotate-[-20deg]" />
                             <div className="flex justify-between items-start mb-4 relative z-10">
-                                <h2 className="text-2xl font-bold">Student Card</h2>
+                                <h2 className="text-2xl font-bold dark:text-white">Student Card</h2>
                                 {profile?.avatar_url ? (
-                                    <img src={profile.avatar_url} alt="Avatar" className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-md" />
+                                    <img src={profile.avatar_url} alt="Avatar" className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-md dark:border-gray-600" />
                                 ) : (
-                                    <UserCircleIcon className="h-16 w-16 text-gray-300 border-2 border-white rounded-full" />
+                                    <UserCircleIcon className="h-16 w-16 text-gray-300 border-2 border-white rounded-full dark:text-gray-500 dark:border-gray-600" />
                                 )}
                             </div>
                             <div className="space-y-2 relative z-10">
                                 <div>
-                                    <p className="text-sm opacity-80">Full Name</p>
-                                    <p className="text-lg font-semibold">{displayFullName || 'Unknown'}</p>
+                                    <p className="text-sm opacity-80 dark:text-gray-400">Full Name</p>
+                                    <p className="text-lg font-semibold dark:text-white">{displayFullName || 'Unknown'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm opacity-80">Username</p>
-                                    <p className="text-lg font-semibold">{displayUsername || 'Unknown'}</p>
+                                    <p className="text-sm opacity-80 dark:text-gray-400">Username</p>
+                                    <p className="text-lg font-semibold dark:text-white">{displayUsername || 'Unknown'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm opacity-80">Email</p>
-                                    <p className="text-lg font-semibold">{userEmail}</p>
+                                    <p className="text-sm opacity-80 dark:text-gray-400">Email</p>
+                                    <p className="text-lg font-semibold dark:text-white">{userEmail}</p>
                                 </div>
                                 {/* Role removed from Student Card */}
                                 {profile?.role === 'student' && (
                                     <div>
-                                        <p className="text-sm opacity-80">Bonus Points</p>
-                                        <p className="text-lg font-semibold">{userBonusPoint}</p>
+                                        <p className="text-sm opacity-80 dark:text-gray-400">Bonus Points</p>
+                                        <p className="text-lg font-semibold dark:text-white">{userBonusPoint}</p>
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Card 2: App Theme Settings */}
-                        <div className="bg-white p-6 rounded-xl shadow-md flex items-center justify-between dark:bg-gray-800">
+                        <div className="bg-white p-6 rounded-xl shadow-md flex items-center justify-between dark:bg-dark-bg-tertiary">
                             <h2 className="text-2xl font-semibold text-gray-800 flex items-center dark:text-white">
-                                {isDarkMode ? <MoonIcon className="h-7 w-7 mr-2 text-indigo-500" /> : <SunIcon className="h-7 w-7 mr-2 text-yellow-500" />}
+                                {isDarkMode ? <MoonIcon className="h-7 w-7 mr-2 text-indigo-500 dark:text-dark-accent-purple" /> : <SunIcon className="h-7 w-7 mr-2 text-yellow-500 dark:text-yellow-400" />}
                                 App Theme
                             </h2>
                             <button
                                 onClick={handleToggleDarkMode}
                                 className={`px-5 py-2 rounded-lg font-semibold transition-colors duration-300 flex items-center ${
-                                    isDarkMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                    isDarkMode ? 'bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-dark-accent-purple dark:text-white dark:hover:bg-purple-800' : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'
                                 }`}
                             >
                                 {isDarkMode ? (
@@ -411,9 +423,9 @@ export default function SettingsPage() {
 
 
                         {/* Card 4: Change Password */}
-                        <div className="bg-white p-6 rounded-xl shadow-md dark:bg-gray-800">
+                        <div className="bg-white p-6 rounded-xl shadow-md dark:bg-dark-bg-tertiary">
                             <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center dark:text-white">
-                                <KeyIcon className="h-7 w-7 mr-2 text-red-500" /> Change Password
+                                <KeyIcon className="h-7 w-7 mr-2 text-red-500 dark:text-red-400" /> Change Password
                             </h2>
                             {passwordError && (
                                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 dark:bg-red-700 dark:border-red-600 dark:text-white" role="alert">
@@ -432,7 +444,7 @@ export default function SettingsPage() {
                                     <input
                                         type="password"
                                         id="currentPassword"
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                         value={currentPassword}
                                         onChange={(e) => setCurrentPassword(e.target.value)}
                                         required
@@ -443,7 +455,7 @@ export default function SettingsPage() {
                                     <input
                                         type="password"
                                         id="newPassword"
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
                                         required
@@ -454,7 +466,7 @@ export default function SettingsPage() {
                                     <input
                                         type="password"
                                         id="confirmNewPassword"
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                         value={confirmNewPassword}
                                         onChange={(e) => setConfirmNewPassword(e.target.value)}
                                         required

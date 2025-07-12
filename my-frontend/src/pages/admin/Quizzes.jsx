@@ -1,29 +1,48 @@
 // frontend/src/pages/admin/Quizzes.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabaseClient'; // Pastikan path ini benar
-import AdminLayout from '../../components/AdminLayout'; // Jika Anda menggunakan AdminLayout di sini
+import { supabase } from '../../lib/supabaseClient'; 
+// import AdminLayout from '../../components/AdminLayout'; // Hapus import ini
+// import AuthContext jika tidak digunakan untuk header admin di sini
+// import { AuthContext } from '../../context/AuthContext';
 import {
     MagnifyingGlassIcon,
     ChevronDownIcon,
-    PencilSquareIcon, // Untuk edit quiz
-    TrashIcon, // Untuk delete quiz
-    PlusIcon, // Untuk tombol tambah quiz/question
-    XMarkIcon, // Untuk tombol close di modal
-    ArrowLeftIcon, // Untuk pagination
-    ArrowRightIcon, // Untuk pagination
-    BellIcon, // Untuk header
-    ClipboardDocumentListIcon, // Icon untuk Quiz
-    DocumentTextIcon, // Icon untuk question text
-    AdjustmentsVerticalIcon, // Icon for question options
-    CheckCircleIcon, // Icon for correct answer
-    CodeBracketIcon, // Icon for essay/script type
-    ListBulletIcon, // Icon for multiple choice
-    CommandLineIcon, // Icon for short answer
-    PhotoIcon // <=== BARU: Untuk gambar
-} from '@heroicons/react/24/outline'; // Pastikan semua ikon diimpor
+    PencilSquareIcon, 
+    TrashIcon, 
+    PlusIcon, 
+    XMarkIcon, 
+    ArrowLeftIcon, 
+    ArrowRightIcon, 
+    BellIcon, // Tidak digunakan jika header dihapus
+    ClipboardDocumentListIcon, 
+    DocumentTextIcon, 
+    AdjustmentsVerticalIcon, 
+    CheckCircleIcon, 
+    CodeBracketIcon, 
+    ListBulletIcon, 
+    CommandLineIcon, 
+    PhotoIcon,
+    VideoCameraIcon // Untuk video di modal View
+} from '@heroicons/react/24/outline'; 
+
+// Helper function untuk mendapatkan ID video YouTube (jika digunakan untuk display)
+const getYouTubeVideoId = (url) => { 
+    let videoId = '';
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|[^#]*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(youtubeRegex);
+    if (match && match[1]) {
+        videoId = match[1];
+    }
+    return videoId;
+};
 
 export default function AdminManageQuizzes() {
+    // Jika header admin dihapus, user dan profile dari AuthContext tidak diperlukan di sini
+    // const { user, profile } = useContext(AuthContext); 
+    // const adminUserName = profile?.username || profile?.full_name || user?.email?.split('@')[0] || 'Admin';
+    // const adminAvatarUrl = profile?.avatar_url || '/default-admin-avatar.jpg';
+
     const [quizzes, setQuizzes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -36,8 +55,8 @@ export default function AdminManageQuizzes() {
     const [showAddQuizModal, setShowAddQuizModal] = useState(false);
     const [showEditQuizModal, setShowEditQuizModal] = useState(false);
     const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
-    const [quizToEdit, setQuizToEdit] = useState(null); // Menyimpan data kuis yang akan diedit
-    const [quizToDelete, setQuizToDelete] = useState(null); // Menyimpan data kuis yang akan dihapus
+    const [quizToEdit, setQuizToEdit] = useState(null); 
+    const [quizToDelete, setQuizToDelete] = useState(null); 
 
     // State untuk form tambah/edit kuis
     const [newQuizData, setNewQuizData] = useState({
@@ -46,8 +65,7 @@ export default function AdminManageQuizzes() {
         type: 'standard', // 'standard', 'practice', 'exam'
         max_attempts: 1,
         pass_score: 70,
-        // image_url: '', // <=== DIHAPUS: Ini akan digantikan oleh 'quizFile'
-        quizFile: null, // <=== BARU: Untuk menyimpan objek file gambar thumbnail kuis
+        quizFile: null, // Untuk menyimpan objek file gambar thumbnail kuis
     });
 
     // --- State untuk manajemen Pertanyaan dalam Quiz ---
@@ -61,21 +79,10 @@ export default function AdminManageQuizzes() {
         correct_answer_index: 0, // For multiple choice
         correct_answer_text: '', // For short answer
         score_value: 10,
-        // image_url: '' // <=== DIHAPUS: Ini akan digantikan oleh 'questionFile'
-        questionFile: null // <=== BARU: Untuk menyimpan objek file gambar pertanyaan
+        questionFile: null // Untuk menyimpan objek file gambar pertanyaan
     });
     const [editingQuestionIndex, setEditingQuestionIndex] = useState(null); // Index of question being edited
 
-
-    // Data dummy admin user untuk header (ini harusnya dari AuthContext Anda)
-    const adminUser = {
-        user_metadata: {
-            first_name: "Admin",
-            avatar_url: "/default-avatar.jpg"
-        },
-        email: "techedifysma@gmail.com"
-    };
-    const adminUserName = adminUser?.user_metadata?.first_name || adminUser?.email?.split('@')[0] || 'Admin';
 
     // --- Fungsi untuk Fetch Kuis (Read) ---
     const fetchQuizzes = async () => {
@@ -101,7 +108,7 @@ export default function AdminManageQuizzes() {
             setTotalQuizzesCount(count || 0);
             console.log("Fetched quizzes data:", data);
         } catch (err) {
-            setError('Gagal memuat daftar kuis: ' + err.message);
+            setError('Failed to load quiz list: ' + err.message);
             setQuizzes([]);
             setTotalQuizzesCount(0);
         } finally {
@@ -130,7 +137,7 @@ export default function AdminManageQuizzes() {
         }));
     };
 
-    const handleQuizFileChange = (e) => { // <=== BARU: Handler untuk file kuis
+    const handleQuizFileChange = (e) => { 
         setNewQuizData(prev => ({ ...prev, quizFile: e.target.files[0] }));
     };
 
@@ -142,7 +149,7 @@ export default function AdminManageQuizzes() {
         }));
     };
 
-    const handleQuestionFileChange = (e) => { // <=== BARU: Handler untuk file pertanyaan
+    const handleQuestionFileChange = (e) => { 
         setNewQuestionData(prev => ({ ...prev, questionFile: e.target.files[0] }));
     };
 
@@ -154,7 +161,7 @@ export default function AdminManageQuizzes() {
             type: 'standard',
             max_attempts: 1,
             pass_score: 70,
-            quizFile: null, // Reset file input
+            quizFile: null, 
         });
         setShowAddQuizModal(true);
     };
@@ -177,7 +184,7 @@ export default function AdminManageQuizzes() {
                 const filePath = `quiz_thumbnails/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
                 
                 const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('materials') // Menggunakan bucket 'materials'
+                    .from('materials') 
                     .upload(filePath, newQuizData.quizFile, {
                         cacheControl: '3600',
                         upsert: false
@@ -198,17 +205,17 @@ export default function AdminManageQuizzes() {
                 type: newQuizData.type,
                 max_attempts: newQuizData.max_attempts,
                 pass_score: newQuizData.pass_score,
-                image_url: finalImageUrl, // Menggunakan URL dari hasil upload
+                image_url: finalImageUrl, 
             });
 
             if (insertError) throw insertError;
 
-            alert('Kuis berhasil ditambahkan!');
+            alert('Quiz successfully added!');
             closeAddQuizModal();
-            fetchQuizzes(); // Refresh daftar kuis
+            fetchQuizzes(); 
         } catch (err) {
-            setError('Gagal menambahkan kuis: ' + err.message);
-            alert('Gagal menambahkan kuis: ' + err.message);
+            setError('Failed to add quiz: ' + err.message);
+            alert('Failed to add quiz: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -223,8 +230,7 @@ export default function AdminManageQuizzes() {
             type: quiz.type,
             max_attempts: quiz.max_attempts,
             pass_score: quiz.pass_score,
-            // image_url: quiz.image_url || '', // Tidak lagi langsung di state ini
-            quizFile: null, // Reset file input
+            quizFile: null, 
         });
         setShowEditQuizModal(true);
     };
@@ -242,7 +248,7 @@ export default function AdminManageQuizzes() {
         if (!quizToEdit) return;
 
         try {
-            let finalImageUrl = quizToEdit.image_url; // Default ke URL yang ada
+            let finalImageUrl = quizToEdit.image_url; 
             let oldFilePath = null;
 
             // Jika ada file gambar kuis baru yang diunggah
@@ -281,7 +287,7 @@ export default function AdminManageQuizzes() {
                     type: newQuizData.type,
                     max_attempts: newQuizData.max_attempts,
                     pass_score: newQuizData.pass_score,
-                    image_url: finalImageUrl, // Menggunakan URL baru atau yang lama
+                    image_url: finalImageUrl, 
                 })
                 .eq('id', quizToEdit.id);
 
@@ -312,11 +318,11 @@ export default function AdminManageQuizzes() {
                 )
             );
 
-            alert('Kuis berhasil diperbarui!');
+            alert('Quiz successfully updated!');
             closeEditQuizModal();
         } catch (err) {
-            setError('Gagal memperbarui kuis: ' + err.message);
-            alert('Gagal memperbarui kuis: ' + err.message);
+            setError('Failed to update quiz: ' + err.message);
+            alert('Failed to update quiz: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -350,7 +356,7 @@ export default function AdminManageQuizzes() {
                         .from('materials')
                         .remove([`quiz_thumbnails/${filePathToDelete}`]);
 
-                    if (storageDeleteError) console.error("Error deleting quiz thumbnail from storage:", storageDeleteError.message);
+                    if (storageDeleteError) console.error("Error deleting quiz thumbnail:", storageDeleteError.message);
                 }
             }
 
@@ -363,15 +369,14 @@ export default function AdminManageQuizzes() {
 
             if (deleteError) throw deleteError;
 
-            // Perbarui state 'quizzes' secara langsung
             setQuizzes(prevQuizzes => prevQuizzes.filter(quiz => quiz.id !== quizToDelete.id));
             setTotalQuizzesCount(prevCount => prevCount - 1);
 
-            alert('Kuis berhasil dihapus!');
+            alert('Quiz successfully deleted!');
             closeDeleteConfirm();
         } catch (err) {
-            setError('Gagal menghapus kuis: ' + err.message);
-            alert('Gagal menghapus kuis: ' + err.message);
+            setError('Failed to delete quiz: ' + err.message);
+            alert('Failed to delete quiz: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -391,7 +396,7 @@ export default function AdminManageQuizzes() {
             setCurrentQuizQuestions(data || []);
         } catch (err) {
             console.error("Error fetching quiz questions:", err.message);
-            setError('Gagal memuat pertanyaan kuis: ' + err.message);
+            setError('Failed to load quiz questions: ' + err.message);
         }
     };
 
@@ -412,7 +417,7 @@ export default function AdminManageQuizzes() {
             correct_answer_index: 0,
             correct_answer_text: '',
             score_value: 10,
-            questionFile: null // Reset file input pertanyaan
+            questionFile: null 
         });
         setEditingQuestionIndex(null);
     };
@@ -446,8 +451,8 @@ export default function AdminManageQuizzes() {
         if (!quizToManageQuestions) return;
 
         try {
-            let finalQuestionImageUrl = newQuestionData.image_url; // Default ke URL yang ada (jika sedang edit dan tidak upload baru)
-            let oldFilePath = null; // Untuk menghapus file lama jika ada
+            let finalQuestionImageUrl = newQuestionData.image_url; 
+            let oldFilePath = null; 
 
             // Jika ada file gambar pertanyaan yang diunggah
             if (newQuestionData.questionFile) {
@@ -455,7 +460,7 @@ export default function AdminManageQuizzes() {
                 const filePath = `question_images/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
                 
                 const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('materials') // Menggunakan bucket 'materials'
+                    .from('materials') 
                     .upload(filePath, newQuestionData.questionFile, {
                         cacheControl: '3600',
                         upsert: false
@@ -492,7 +497,7 @@ export default function AdminManageQuizzes() {
                 question_type: newQuestionData.question_type,
                 score_value: newQuestionData.score_value,
                 order_in_quiz: editingQuestionIndex !== null ? currentQuizQuestions[editingQuestionIndex].order_in_quiz : currentQuizQuestions.length + 1,
-                image_url: finalQuestionImageUrl, // Menggunakan URL dari hasil upload/input
+                image_url: finalQuestionImageUrl, 
                 // Kondisional berdasarkan tipe pertanyaan
                 options: newQuestionData.question_type === 'multiple_choice' ? JSON.stringify(newQuestionData.options) : null,
                 correct_answer_index: newQuestionData.question_type === 'multiple_choice' ? newQuestionData.correct_answer_index : null,
@@ -522,7 +527,7 @@ export default function AdminManageQuizzes() {
             }
 
 
-            alert('Pertanyaan berhasil disimpan!');
+            alert('Question successfully saved!');
             setNewQuestionData({ // Reset form
                 question_text: '',
                 question_type: 'multiple_choice',
@@ -530,13 +535,13 @@ export default function AdminManageQuizzes() {
                 correct_answer_index: 0,
                 correct_answer_text: '',
                 score_value: 10,
-                questionFile: null // Reset file input
+                questionFile: null 
             });
             setEditingQuestionIndex(null);
             fetchQuizQuestions(quizToManageQuestions.id); // Refresh daftar pertanyaan
         } catch (err) {
-            setError('Gagal menyimpan pertanyaan: ' + err.message);
-            alert('Gagal menyimpan pertanyaan: ' + err.message);
+            setError('Failed to save question: ' + err.message);
+            alert('Failed to save question: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -550,14 +555,14 @@ export default function AdminManageQuizzes() {
             correct_answer_index: question.question_type === 'multiple_choice' ? question.correct_answer_index : 0,
             correct_answer_text: question.question_type === 'short_answer' || question.question_type === 'essay' ? (question.correct_answer_text || '') : '',
             score_value: question.score_value,
-            image_url: question.image_url || '', // Tetap simpan URL yang ada untuk tampilan
-            questionFile: null // Reset file input
+            image_url: question.image_url || '', 
+            questionFile: null 
         });
         setEditingQuestionIndex(index);
     };
 
     const handleDeleteQuestion = async (questionId, imageUrl) => {
-        if (!window.confirm('Apakah Anda yakin ingin menghapus pertanyaan ini?')) return;
+        if (!window.confirm('Are you sure you want to delete this question?')) return;
         setLoading(true);
         setError(null);
         try {
@@ -579,11 +584,11 @@ export default function AdminManageQuizzes() {
                 .eq('id', questionId);
             if (deleteError) throw deleteError;
 
-            alert('Pertanyaan berhasil dihapus!');
+            alert('Question successfully deleted!');
             fetchQuizQuestions(quizToManageQuestions.id);
         } catch (err) {
-            setError('Gagal menghapus pertanyaan: ' + err.message);
-            alert('Gagal menghapus pertanyaan: ' + err.message);
+            setError('Failed to delete question: ' + err.message);
+            alert('Failed to delete question: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -593,57 +598,49 @@ export default function AdminManageQuizzes() {
     // --- Rendering UI ---
     if (loading && quizzes.length === 0) {
         return (
-            <div className="flex-grow h-screen flex justify-center items-center text-gray-700 text-xl">
-                <i className="fas fa-spinner fa-spin mr-2"></i> Memuat daftar kuis...
+            <div className="flex-grow h-screen flex justify-center items-center text-gray-700 text-xl dark:text-gray-300">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-700 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading quiz list...
             </div>
         );
     }
 
     if (error && quizzes.length === 0) {
         return (
-            <div className="flex-grow h-screen flex justify-center items-center text-red-600 text-xl">
-                <i className="fas fa-exclamation-triangle mr-2"></i> Error: {error}
+            <div className="flex-grow h-screen flex justify-center items-center text-red-600 text-xl dark:text-red-400">
+                <svg className="h-6 w-6 mr-2 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Error: {error}
             </div>
         );
     }
 
     return (
-        <div className="flex-grow h-[95vh] scrollbar-hide overflow-y-auto rounded-xl p-6 bg-[#F9F9FB]">
-            <header className="sticky top-0 z-10 bg-[#F9F9FB] flex justify-between items-center p-6 mb-6 shadow-sm rounded-xl">
-                <h1 className="text-3xl font-bold text-gray-900">Hi, {adminUserName}!</h1>
-                <div className="flex items-center space-x-4">
-                    <div className="relative">
-                        <BellIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
-                        <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <img
-                            className="h-10 w-10 rounded-full object-cover"
-                            src={adminUser?.user_metadata?.avatar_url || '/default-avatar.jpg'}
-                            alt="Admin Avatar"
-                        />
-                        <ChevronDownIcon className="h-5 w-5 text-gray-500 cursor-pointer" />
-                    </div>
-                </div>
-            </header>
+        <div className="flex-grow h-[95vh] scrollbar-hide overflow-y-auto rounded-xl p-6 bg-[#F9F9FB] dark:bg-adminDark-bg-secondary">
+            {/* Header Admin Page */}
+            {/* Header dihapus karena instruksi pengguna */}
 
-            <div className="bg-white p-4 mb-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div className="bg-white p-4 mb-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-2 gap-4 items-center dark:bg-adminDark-bg-tertiary dark:shadow-none">
                 <div className="relative">
                     <input
                         type="text"
                         placeholder="Search quizzes by title or description"
-                        className="w-full py-2 pl-10 pr-4 rounded-full bg-gray-100 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400"
+                        className="w-full py-2 pl-10 pr-4 rounded-full bg-gray-100 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-adminDark-accent-green"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 dark:text-gray-500" />
                 </div>
 
                 <div className="relative flex justify-end">
                     {/* Tombol Tambah Kuis */}
                     <button
                         onClick={openAddQuizModal}
-                        className="bg-purple-600 text-white rounded-full p-2 hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center min-w-[40px] h-[40px]"
+                        className="bg-purple-600 text-white rounded-full p-2 hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center min-w-[40px] h-[40px] dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                         title="Add New Quiz"
                     >
                         <PlusIcon className="h-5 w-5" />
@@ -651,23 +648,26 @@ export default function AdminManageQuizzes() {
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-md overflow-x-auto">
+            <div className="bg-white p-6 rounded-xl shadow-md overflow-x-auto dark:bg-adminDark-bg-tertiary dark:shadow-none">
                 {/* Loading overlay saat operasi CRUD berlangsung */}
                 {loading && quizzes.length > 0 && (
-                    <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-75 z-20 rounded-xl">
-                        <i className="fas fa-spinner fa-spin text-purple-600 text-4xl"></i>
+                    <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-75 z-20 rounded-xl dark:bg-gray-900 dark:bg-opacity-75">
+                        <svg className="animate-spin -ml-1 mr-3 h-8 w-8 text-adminDark-accent-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                     </div>
                 )}
                 {/* Pesan error umum */}
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 dark:bg-red-700 dark:border-red-600 dark:text-white" role="alert">
                         <strong className="font-bold">Error!</strong>
                         <span className="block sm:inline"> {error}</span>
                     </div>
                 )}
 
-                <table className="min-w-full divide-y divide-gray-300 text-sm">
-                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
+                <table className="min-w-full divide-y divide-gray-300 text-sm dark:divide-gray-700">
+                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider dark:bg-gray-800 dark:text-gray-300">
                         <tr>
                             <th className="px-6 py-3 text-left">Title</th>
                             <th className="px-6 py-3 text-left">Description</th>
@@ -678,36 +678,36 @@ export default function AdminManageQuizzes() {
                             <th className="px-6 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-200 dark:bg-adminDark-bg-tertiary dark:divide-gray-700">
                         {quizzes.length > 0 ? (
                             quizzes.map((quiz) => (
-                                <tr key={quiz.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-semibold">{quiz.title}</td>
-                                    <td className="px-6 py-4 text-gray-700 max-w-xs truncate">{quiz.description || '-'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap capitalize">{quiz.type}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{quiz.max_attempts}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{quiz.pass_score}%</td>
-                                    <td className="px-6 py-4 text-gray-500">
+                                <tr key={quiz.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150">
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-semibold dark:text-white">{quiz.title}</td>
+                                    <td className="px-6 py-4 text-gray-700 max-w-xs truncate dark:text-gray-300">{quiz.description || '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap capitalize text-gray-700 dark:text-gray-300">{quiz.type}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">{quiz.max_attempts}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">{quiz.pass_score}%</td>
+                                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                                         {new Date(quiz.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                     </td>
                                     <td className="px-6 py-4 text-right space-x-2">
                                         <button
                                             onClick={() => openManageQuestionsModal(quiz)}
-                                            className="text-indigo-600 hover:underline"
+                                            className="text-indigo-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                                             title="Manage Questions"
                                         >
                                             <ListBulletIcon className="h-5 w-5 inline mr-1" />Questions
                                         </button>
                                         <button
                                             onClick={() => openEditQuizModal(quiz)}
-                                            className="text-blue-600 hover:underline"
+                                            className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                                             title="Edit Quiz"
                                         >
                                             <PencilSquareIcon className="h-5 w-5 inline mr-1" />Edit
                                         </button>
                                         <button
                                             onClick={() => openDeleteConfirm(quiz)}
-                                            className="text-red-600 hover:underline"
+                                            className="text-red-600 hover:underline dark:text-red-500 dark:hover:text-red-400"
                                             title="Delete Quiz"
                                         >
                                             <TrashIcon className="h-5 w-5 inline mr-1" />Delete
@@ -717,7 +717,7 @@ export default function AdminManageQuizzes() {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="7" className="text-center py-4 text-gray-500">No quizzes found.</td>
+                                <td colSpan="7" className="text-center py-4 text-gray-500 dark:text-gray-400">No quizzes found.</td>
                             </tr>
                         )}
                     </tbody>
@@ -729,7 +729,7 @@ export default function AdminManageQuizzes() {
                     <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50"
+                        className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                         <ArrowLeftIcon className="h-4 w-4 inline" /> Prev
                     </button>
@@ -739,8 +739,8 @@ export default function AdminManageQuizzes() {
                             onClick={() => handlePageChange(i + 1)}
                             className={`px-4 py-2 text-sm border ${
                                 currentPage === i + 1
-                                    ? 'bg-purple-600 text-white border-purple-600'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                    ? 'bg-purple-600 text-white border-purple-600 dark:bg-adminDark-accent-green dark:text-white dark:border-adminDark-accent-green'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
                             }`}
                         >
                             {i + 1}
@@ -749,7 +749,7 @@ export default function AdminManageQuizzes() {
                     <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50"
+                        className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                         Next <ArrowRightIcon className="h-4 w-4 inline" />
                     </button>
@@ -758,42 +758,42 @@ export default function AdminManageQuizzes() {
 
             {/* --- Modal Tambah Kuis (Create) --- */}
             {showAddQuizModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative">
-                        <button onClick={closeAddQuizModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <button onClick={closeAddQuizModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
-                        <h2 className="text-2xl font-bold mb-6 text-gray-800">Tambah Kuis Baru</h2>
+                        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Add New Quiz</h2>
                         <form onSubmit={handleCreateQuiz}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-quiz-title">Title</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-quiz-title">Title</label>
                                 <input
                                     type="text"
                                     id="add-quiz-title"
                                     name="title"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.title}
                                     onChange={handleQuizInputChange}
                                     required
                                 />
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-quiz-description">Description</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-quiz-description">Description</label>
                                 <textarea
                                     id="add-quiz-description"
                                     name="description"
                                     rows="3"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.description}
                                     onChange={handleQuizInputChange}
                                 ></textarea>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-quiz-type">Type</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-quiz-type">Type</label>
                                 <select
                                     id="add-quiz-type"
                                     name="type"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.type}
                                     onChange={handleQuizInputChange}
                                 >
@@ -803,44 +803,44 @@ export default function AdminManageQuizzes() {
                                 </select>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-quiz-max_attempts">Max Attempts</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-quiz-max_attempts">Max Attempts</label>
                                 <input
                                     type="number"
                                     id="add-quiz-max_attempts"
                                     name="max_attempts"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.max_attempts}
                                     onChange={handleQuizInputChange}
                                     required
                                 />
                             </div>
                             <div className="mb-6">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-quiz-pass_score">Pass Score (%)</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-quiz-pass_score">Pass Score (%)</label>
                                 <input
                                     type="number"
                                     id="add-quiz-pass_score"
                                     name="pass_score"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.pass_score}
                                     onChange={handleQuizInputChange}
                                     required
                                 />
                             </div>
-                             <div className="mb-6">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-quiz-file">Quiz Thumbnail Image (Optional)</label>
+                            <div className="mb-6">
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="add-quiz-file">Quiz Thumbnail Image (Optional)</label>
                                 <input
                                     type="file"
                                     id="add-quiz-file"
                                     name="quizFile"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    onChange={handleQuizFileChange} // <=== BARU: Menggunakan handler file
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    onChange={handleQuizFileChange} 
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Upload an image for the quiz banner/thumbnail.</p>
+                                <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Upload an image for the quiz banner/thumbnail.</p>
                             </div>
                             <div className="flex items-center justify-between">
                                 <button
                                     type="submit"
-                                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                                     disabled={loading}
                                 >
                                     {loading ? 'Adding...' : 'Add Quiz'}
@@ -848,7 +848,7 @@ export default function AdminManageQuizzes() {
                                 <button
                                     type="button"
                                     onClick={closeAddQuizModal}
-                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                                     disabled={loading}
                                 >
                                     Cancel
@@ -861,42 +861,42 @@ export default function AdminManageQuizzes() {
 
             {/* --- Modal Edit Kuis (Update) --- */}
             {showEditQuizModal && quizToEdit && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative">
-                        <button onClick={closeEditQuizModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <button onClick={closeEditQuizModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
-                        <h2 className="text-2xl font-bold mb-6 text-gray-800">Edit Kuis</h2>
+                        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Edit Quiz</h2>
                         <form onSubmit={handleUpdateQuiz}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-quiz-title">Title</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-quiz-title">Title</label>
                                 <input
                                     type="text"
                                     id="edit-quiz-title"
                                     name="title"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.title}
                                     onChange={handleQuizInputChange}
                                     required
                                 />
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-quiz-description">Description</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-quiz-description">Description</label>
                                 <textarea
                                     id="edit-quiz-description"
                                     name="description"
                                     rows="3"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.description}
                                     onChange={handleQuizInputChange}
                                 ></textarea>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-quiz-type">Type</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-quiz-type">Type</label>
                                 <select
                                     id="edit-quiz-type"
                                     name="type"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.type}
                                     onChange={handleQuizInputChange}
                                 >
@@ -906,50 +906,50 @@ export default function AdminManageQuizzes() {
                                 </select>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-quiz-max_attempts">Max Attempts</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-quiz-max_attempts">Max Attempts</label>
                                 <input
                                     type="number"
                                     id="edit-quiz-max_attempts"
                                     name="max_attempts"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.max_attempts}
                                     onChange={handleQuizInputChange}
                                     required
                                 />
                             </div>
                             <div className="mb-6">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-quiz-pass_score">Pass Score (%)</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-quiz-pass_score">Pass Score (%)</label>
                                 <input
                                     type="number"
                                     id="edit-quiz-pass_score"
                                     name="pass_score"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={newQuizData.pass_score}
                                     onChange={handleQuizInputChange}
                                     required
                                 />
                             </div>
                             <div className="mb-6">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-quiz-file">Quiz Thumbnail Image (Optional)</label>
+                                <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-gray-300" htmlFor="edit-quiz-file">Quiz Thumbnail Image (Optional)</label>
                                 {quizToEdit.image_url && (
                                     <div className="mb-2">
                                         <img src={quizToEdit.image_url} alt="Current Thumbnail" className="h-20 w-20 object-cover rounded-md" />
-                                        <p className="text-xs text-gray-500 mt-1">Current: <a href={quizToEdit.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{quizToEdit.image_url.split('/').pop()}</a></p>
+                                        <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Current: <a href={quizToEdit.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline dark:text-blue-400 dark:hover:underline">{quizToEdit.image_url.split('/').pop()}</a></p>
                                     </div>
                                 )}
                                 <input
                                     type="file"
                                     id="edit-quiz-file"
                                     name="quizFile"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    onChange={handleQuizFileChange}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    onChange={handleQuizFileChange} 
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Leave blank to keep current thumbnail. Upload new image to replace.</p>
+                                <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Leave blank to keep current thumbnail. Upload new image to replace.</p>
                             </div>
                             <div className="flex items-center justify-between">
                                 <button
                                     type="submit"
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                                     disabled={loading}
                                 >
                                     {loading ? 'Updating...' : 'Update Quiz'}
@@ -957,7 +957,7 @@ export default function AdminManageQuizzes() {
                                 <button
                                     type="button"
                                     onClick={closeEditQuizModal}
-                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                                     disabled={loading}
                                 >
                                     Cancel
@@ -970,20 +970,20 @@ export default function AdminManageQuizzes() {
 
             {/* --- Modal Konfirmasi Hapus Kuis (Delete) --- */}
             {showDeleteConfirmationModal && quizToDelete && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm relative text-center">
-                        <button onClick={closeDeleteConfirm} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm relative text-center dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <button onClick={closeDeleteConfirm} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
-                        <h2 className="text-xl font-bold mb-4 text-gray-800">Konfirmasi Penghapusan</h2>
-                        <p className="mb-6 text-gray-700">
-                            Apakah Anda yakin ingin menghapus kuis "<span className="font-semibold">{quizToDelete.title}</span>"?
-                            Tindakan ini tidak dapat dibatalkan dan juga akan menghapus semua pertanyaan dan jawaban terkait.
+                        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Confirm Deletion</h2>
+                        <p className="mb-6 text-gray-700 dark:text-gray-300">
+                            Are you sure you want to delete quiz "<span className="font-semibold">{quizToDelete.title}</span>"?
+                            This action cannot be undone and will also delete all connected questions and answers.
                         </p>
                         <div className="flex justify-center space-x-4">
                             <button
                                 onClick={confirmDeleteQuiz}
-                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-red-700 dark:hover:bg-red-800"
                                 disabled={loading}
                             >
                                 {loading ? 'Deleting...' : 'Delete'}
@@ -991,10 +991,10 @@ export default function AdminManageQuizzes() {
                             <button
                                 type="button"
                                 onClick={closeDeleteConfirm}
-                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                                 disabled={loading}
                             >
-                                Batal
+                                Cancel
                             </button>
                         </div>
                     </div>
@@ -1003,35 +1003,35 @@ export default function AdminManageQuizzes() {
 
             {/* --- Modal Manajemen Pertanyaan (Manage Questions) --- */}
             {showManageQuestionsModal && quizToManageQuestions && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl relative max-h-[90vh] overflow-y-auto">
-                        <button onClick={closeManageQuestionsModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl relative max-h-[90vh] overflow-y-auto dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <button onClick={closeManageQuestionsModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
-                        <h2 className="text-2xl font-bold mb-6 text-gray-800">Manage Questions for "{quizToManageQuestions.title}"</h2>
+                        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Manage Questions for "{quizToManageQuestions.title}"</h2>
 
                         {/* Form Tambah/Edit Pertanyaan */}
-                        <div className="mb-6 border p-4 rounded-lg bg-gray-50">
-                            <h3 className="text-xl font-semibold mb-4">{editingQuestionIndex !== null ? 'Edit Question' : 'Add New Question'}</h3>
+                        <div className="mb-6 border p-4 rounded-lg bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                            <h3 className="text-xl font-semibold mb-4 dark:text-white">{editingQuestionIndex !== null ? 'Edit Question' : 'Add New Question'}</h3>
                             <form onSubmit={handleAddUpdateQuestion}>
                                 <div className="mb-3">
-                                    <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="question_text">Question Text</label>
+                                    <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300" htmlFor="question_text">Question Text</label>
                                     <textarea
                                         id="question_text"
                                         name="question_text"
                                         rows="3"
-                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         value={newQuestionData.question_text}
                                         onChange={handleQuestionInputChange}
                                         required
                                     ></textarea>
                                 </div>
                                 <div className="mb-3">
-                                    <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="question_type">Question Type</label>
+                                    <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300" htmlFor="question_type">Question Type</label>
                                     <select
                                         id="question_type"
                                         name="question_type"
-                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         value={newQuestionData.question_type}
                                         onChange={handleQuestionInputChange}
                                     >
@@ -1041,109 +1041,109 @@ export default function AdminManageQuizzes() {
                                     </select>
                                 </div>
 
-                                {/* Kondisional berdasarkan Tipe Pertanyaan */}
+                                {/* Conditional fields based on Question Type */}
                                 {newQuestionData.question_type === 'multiple_choice' && (
-                                    <div className="mb-3 border p-3 rounded bg-white">
-                                        <label className="block text-gray-700 text-sm font-bold mb-1">Options</label>
+                                    <div className="mb-3 border p-3 rounded bg-white dark:border-gray-700 dark:bg-gray-800">
+                                        <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300">Options</label>
                                         {newQuestionData.options.map((option, index) => (
                                             <div key={index} className="flex items-center mb-2">
                                                 <input
                                                     type="text"
-                                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow"
+                                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                     value={option}
                                                     onChange={(e) => handleOptionChange(index, e.target.value)}
                                                     placeholder={`Option ${index + 1}`}
                                                     required
                                                 />
-                                                <button type="button" onClick={() => handleRemoveOption(index)} className="ml-2 text-red-500 hover:text-red-700">
+                                                <button type="button" onClick={() => handleRemoveOption(index)} className="ml-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500">
                                                     <XMarkIcon className="h-5 w-5" />
                                                 </button>
                                             </div>
                                         ))}
-                                        <button type="button" onClick={handleAddOption} className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded mt-2">Add Option</button>
+                                        <button type="button" onClick={handleAddOption} className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded mt-2 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">Add Option</button>
 
-                                        <label className="block text-gray-700 text-sm font-bold mb-1 mt-3" htmlFor="correct_answer_index">Correct Answer (Index)</label>
+                                        <label className="block text-gray-700 text-sm font-bold mb-1 mt-3 dark:text-gray-300" htmlFor="correct_answer_index">Correct Answer (Index)</label>
                                         <input
                                             type="number"
                                             id="correct_answer_index"
                                             name="correct_answer_index"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             value={newQuestionData.correct_answer_index}
                                             onChange={handleQuestionInputChange}
                                             min="0"
                                             max={newQuestionData.options.length - 1}
                                             required
                                         />
-                                        <p className="text-xs text-gray-500">0-indexed. E.g., 0 for first option, 1 for second.</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">0-indexed. E.g., 0 for first option, 1 for second.</p>
                                     </div>
                                 )}
 
                                 {newQuestionData.question_type === 'short_answer' && (
                                     <div className="mb-3">
-                                        <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="correct_answer_text">Correct Answer Text</label>
+                                        <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300" htmlFor="correct_answer_text">Correct Answer Text</label>
                                         <input
                                             type="text"
                                             id="correct_answer_text"
                                             name="correct_answer_text"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             value={newQuestionData.correct_answer_text}
                                             onChange={handleQuestionInputChange}
                                             required
                                         />
-                                        <p className="text-xs text-gray-500">Case-insensitive exact match will be graded correct.</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Case-insensitive exact match will be graded correct.</p>
                                     </div>
                                 )}
 
                                 {newQuestionData.question_type === 'essay' && (
                                     <div className="mb-3">
-                                        <p className="text-sm text-gray-600 italic">Essay questions require manual grading by admin.</p>
-                                        <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="essay_guideline">Grading Guideline (Optional)</label>
+                                        <p className="text-sm text-gray-600 italic dark:text-gray-400">Essay questions require manual grading by admin.</p>
+                                        <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300" htmlFor="essay_guideline">Grading Guideline (Optional)</label>
                                         <textarea
                                             id="essay_guideline"
                                             name="correct_answer_text" // Menggunakan correct_answer_text untuk menyimpan panduan grading
                                             rows="2"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             value={newQuestionData.correct_answer_text}
                                             onChange={handleQuestionInputChange}
-                                            placeholder="e.g., Kriteria penilaian: kelengkapan, koherensi, orisinalitas."
+                                            placeholder="e.g., Grading criteria: completeness, coherence, originality." // Teks bahasa Inggris
                                         ></textarea>
-                                        <p className="text-xs text-gray-500 mt-1">Ini akan muncul sebagai panduan untuk admin saat melakukan grading manual.</p>
+                                        <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">This will appear as a guideline for admin for manual grading.</p>
                                     </div>
                                 )}
                                 
                                 <div className="mb-3">
-                                    <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="score_value">Score Value</label>
+                                    <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300" htmlFor="score_value">Score Value</label>
                                     <input
                                         type="number"
                                         id="score_value"
                                         name="score_value"
-                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         value={newQuestionData.score_value}
                                         onChange={handleQuestionInputChange}
                                         required
                                     />
                                 </div>
                                 <div className="mb-6">
-                                    <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="question_file">Question Image (Optional)</label>
+                                    <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300" htmlFor="question_file">Question Image (Optional)</label>
                                     {newQuestionData.image_url && ( // Tampilkan gambar yang ada saat edit
                                         <div className="mb-2">
                                             <img src={newQuestionData.image_url} alt="Current Question Image" className="h-16 w-auto object-cover rounded-md" />
-                                            <p className="text-xs text-gray-500 mt-1">Current: <a href={newQuestionData.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{newQuestionData.image_url.split('/').pop()}</a></p>
+                                            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Current: <a href={newQuestionData.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline dark:text-blue-400 dark:hover:underline">{newQuestionData.image_url.split('/').pop()}</a></p>
                                         </div>
                                     )}
                                     <input
                                         type="file"
                                         id="question_file"
                                         name="questionFile"
-                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                        onChange={handleQuestionFileChange} // <=== BARU: Menggunakan handler file pertanyaan
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        onChange={handleQuestionFileChange} 
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">Upload an image for the question.</p>
+                                    <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Upload an image for the question.</p>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <button
                                         type="submit"
-                                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-adminDark-accent-green dark:hover:bg-green-700"
                                         disabled={loading}
                                     >
                                         {loading ? 'Saving...' : (editingQuestionIndex !== null ? 'Update Question' : 'Add Question')}
@@ -1160,10 +1160,10 @@ export default function AdminManageQuizzes() {
                                                     correct_answer_index: 0,
                                                     correct_answer_text: '',
                                                     score_value: 10,
-                                                    questionFile: null // Reset file input
+                                                    questionFile: null 
                                                 });
                                             }}
-                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                                             disabled={loading}
                                         >
                                             Cancel Edit
@@ -1174,55 +1174,55 @@ export default function AdminManageQuizzes() {
                         </div>
 
                         {/* Daftar Pertanyaan */}
-                        <div className="bg-white p-4 rounded-lg shadow-md">
-                            <h3 className="text-xl font-semibold mb-4">Questions List</h3>
+                        <div className="bg-white p-4 rounded-lg shadow-md dark:bg-adminDark-bg-tertiary dark:shadow-none">
+                            <h3 className="text-xl font-semibold mb-4 dark:text-white">Questions List</h3>
                             {currentQuizQuestions.length > 0 ? (
-                                <ul className="divide-y divide-gray-200">
+                                <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                                     {currentQuizQuestions.map((question, index) => (
                                         <li key={question.id} className="py-4">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <p className="font-semibold text-gray-800">Q{question.order_in_quiz}: {question.question_text}</p>
-                                                    <p className="text-sm text-gray-600 capitalize">Type: {question.question_type.replace('_', ' ')} (Score: {question.score_value})</p>
+                                                    <p className="font-semibold text-gray-800 dark:text-white">Q{question.order_in_quiz}: {question.question_text}</p>
+                                                    <p className="text-sm text-gray-600 capitalize dark:text-gray-300">Type: {question.question_type.replace('_', ' ')} (Score: {question.score_value})</p>
                                                     {question.image_url && (
                                                         <img src={question.image_url} alt="Question Image" className="mt-2 max-h-24 object-cover rounded-md" />
                                                     )}
                                                     {question.question_type === 'multiple_choice' && (
-                                                        <div className="text-xs text-gray-700 mt-1">
+                                                        <div className="text-xs text-gray-700 mt-1 dark:text-gray-300">
                                                             Options:
                                                             <ol className="list-decimal list-inside ml-2">
                                                                 {typeof question.options === 'string' ? JSON.parse(question.options).map((opt, i) => (
-                                                                    <li key={i} className={question.correct_answer_index === i ? 'font-bold text-green-700' : ''}>{opt}</li>
-                                                                )) : question.options.map((opt, i) => (
-                                                                    <li key={i} className={question.correct_answer_index === i ? 'font-bold text-green-700' : ''}>{opt}</li>
+                                                                    <li key={i} className={question.correct_answer_index === i ? 'font-bold text-green-700 dark:text-green-500' : ''}>{opt}</li>
+                                                                )) : question.options.map((opt, i) => ( // Handle already parsed options
+                                                                    <li key={i} className={question.correct_answer_index === i ? 'font-bold text-green-700 dark:text-green-500' : ''}>{opt}</li>
                                                                 ))}
                                                             </ol>
                                                         </div>
                                                     )}
                                                     {question.question_type === 'short_answer' && (
-                                                        <p className="text-sm text-gray-700 mt-1">Correct Answer: <span className="font-bold">{question.correct_answer_text}</span></p>
+                                                        <p className="text-sm text-gray-700 mt-1 dark:text-gray-300">Correct Answer: <span className="font-bold">{question.correct_answer_text}</span></p>
                                                     )}
                                                     {question.question_type === 'essay' && (
-                                                        <p className="text-sm text-gray-700 mt-1 italic">Grading Guideline: {question.correct_answer_text || '-'}</p>
+                                                        <p className="text-sm text-gray-700 mt-1 italic dark:text-gray-300">Grading Guideline: {question.correct_answer_text || '-'}</p>
                                                     )}
                                                 </div>
                                                 <div className="flex space-x-2">
-                                                    <button onClick={() => handleEditQuestion(question, index)} className="text-blue-600 hover:underline"><PencilSquareIcon className="h-4 w-4 inline" /></button>
-                                                    <button onClick={() => handleDeleteQuestion(question.id, question.image_url)} className="text-red-600 hover:underline"><TrashIcon className="h-4 w-4 inline" /></button>
+                                                    <button onClick={() => handleEditQuestion(question, index)} className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"><PencilSquareIcon className="h-4 w-4 inline" /></button>
+                                                    <button onClick={() => handleDeleteQuestion(question.id, question.image_url)} className="text-red-600 hover:underline dark:text-red-500 dark:hover:text-red-400"><TrashIcon className="h-4 w-4 inline" /></button>
                                                 </div>
                                             </div>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-gray-500 italic">No questions added yet for this quiz.</p>
+                                <p className="text-gray-500 italic dark:text-gray-400">No questions added yet for this quiz.</p>
                             )}
                         </div>
 
                         <div className="mt-6 flex justify-end">
                             <button
                                 onClick={closeManageQuestionsModal}
-                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
                             >
                                 Close
                             </button>

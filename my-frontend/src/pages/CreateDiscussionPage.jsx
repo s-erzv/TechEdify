@@ -107,37 +107,37 @@ export default function CreateDiscussionPage() {
 
     return (
         <MainLayout>
-            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)]">
-                <header className="mb-6 p-4 bg-white rounded-xl shadow-sm flex items-center">
-                    <button onClick={() => navigate('/discussions')} className="mr-4 text-gray-700 hover:text-gray-900">
+            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)] dark:bg-dark-bg-secondary">
+                <header className="mb-6 p-4 bg-white rounded-xl shadow-sm flex items-center dark:bg-dark-bg-tertiary">
+                    <button onClick={() => navigate('/discussions')} className="mr-4 text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                         <ArrowLeftIcon className="h-6 w-6" />
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                        <PlusCircleIcon className="h-8 w-8 mr-3 text-purple-600" /> Buat Diskusi Baru
+                    <h1 className="text-3xl font-bold text-gray-900 flex items-center dark:text-white">
+                        <PlusCircleIcon className="h-8 w-8 mr-3 text-purple-600 dark:text-dark-accent-purple" /> Buat Diskusi Baru
                     </h1>
                 </header>
 
-                <div className="bg-white p-6 rounded-xl shadow-md">
+                <div className="bg-white p-6 rounded-xl shadow-md dark:bg-dark-bg-tertiary">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
-                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative dark:bg-red-700 dark:border-red-600 dark:text-white" role="alert">
                                 <strong className="font-bold">Error!</strong>
                                 <span className="block sm:inline"> {error}</span>
                             </div>
                         )}
                         {successMessage && (
-                            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative dark:bg-green-700 dark:border-green-600 dark:text-white" role="alert">
                                 <strong className="font-bold">Sukses!</strong>
                                 <span className="block sm:inline"> {successMessage}</span>
                             </div>
                         )}
 
                         <div>
-                            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">Judul Diskusi</label>
+                            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Judul Diskusi</label>
                             <input
                                 type="text"
                                 id="title"
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Masukkan judul diskusi Anda"
@@ -146,10 +146,10 @@ export default function CreateDiscussionPage() {
                         </div>
 
                         <div>
-                            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">Konten Diskusi</label>
+                            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Konten Diskusi</label>
                             <textarea
                                 id="content"
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 resize-y min-h-[150px]"
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 resize-y min-h-[150px] dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 placeholder="Tulis konten diskusi Anda di sini..."
@@ -159,10 +159,10 @@ export default function CreateDiscussionPage() {
                         </div>
 
                         <div>
-                            <label htmlFor="course" className="block text-sm font-medium text-gray-700 mb-2">Pilih Kursus (Opsional)</label>
+                            <label htmlFor="course" className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Pilih Kursus (Opsional)</label>
                             <select
                                 id="course"
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                 value={selectedCourse}
                                 onChange={(e) => {
                                     setSelectedCourse(e.target.value);
@@ -177,10 +177,10 @@ export default function CreateDiscussionPage() {
                         </div>
 
                         <div>
-                            <label htmlFor="module" className="block text-sm font-medium text-gray-700 mb-2">Pilih Modul (Opsional)</label>
+                            <label htmlFor="module" className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Pilih Modul (Opsional)</label>
                             <select
                                 id="module"
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-dark-accent-purple"
                                 value={selectedModule}
                                 onChange={(e) => setSelectedModule(e.target.value)}
                                 disabled={!selectedCourse} // Nonaktifkan jika belum ada kursus yang dipilih
@@ -195,7 +195,7 @@ export default function CreateDiscussionPage() {
                         <button
                             type="submit"
                             disabled={loading || !title.trim() || !content.trim()}
-                            className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center w-full"
+                            className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center w-full dark:bg-dark-accent-purple dark:hover:bg-purple-800"
                         >
                             {loading ? 'Membuat Diskusi...' : (
                                 <>

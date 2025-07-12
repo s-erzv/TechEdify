@@ -1,7 +1,7 @@
-// frontend/src/pages/LessonViewerPage.jsx
+// my-frontend/src/pages/LessonViewerPage.jsx
 import React, { useState, useEffect, useContext, useCallback } from 'react'; // Tambah useCallback di import
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, recordDailyActivity } from '../lib/supabaseClient'; // Import recordDailyActivity
 import MainLayout from '../components/mainLayout';
 import { AuthContext } from '../context/AuthContext';
 import {
@@ -170,6 +170,8 @@ export default function LessonViewerPage() {
                 console.log(`Lesson ${lessonIdToComplete} successfully marked as complete.`);
                 // After successful insert, update local completedLessons state
                 setCompletedLessons(prev => new Set(prev).add(lessonIdToComplete));
+                // --- BARIS BARU: Catat aktivitas harian untuk penyelesaian pelajaran ---
+                await recordDailyActivity(user.id, 'lesson_completed', 1);
             }
 
             // This part will run whether the lesson was newly completed or already completed
@@ -350,7 +352,7 @@ export default function LessonViewerPage() {
 
     const renderMaterial = (material) => {
         if (!material || !material.materials) {
-            return <p>Materi tidak ditemukan.</p>;
+            return <p className="text-gray-600 dark:text-gray-300">Materi tidak ditemukan.</p>;
         }
 
         const { content_type, content_url, content_text, title } = material.materials;
@@ -373,11 +375,11 @@ export default function LessonViewerPage() {
                         ></iframe>
                     </div>
                 ) : (
-                    <p className="text-red-600">URL video tidak valid atau tidak didukung.</p>
+                    <p className="text-red-600 dark:text-red-400">URL video tidak valid atau tidak didukung.</p>
                 );
             case 'text':
                 return (
-                    <div className="prose max-w-none">
+                    <div className="prose max-w-none dark:text-gray-100"> {/* Menambahkan dark:text untuk teks */}
                         {/* Menggunakan dangerouslySetInnerHTML jika content_text adalah HTML */}
                         {/* Jika content_text adalah plain text, gunakan ini: */}
                         <div dangerouslySetInnerHTML={{ __html: content_text }} /> 
@@ -391,27 +393,27 @@ export default function LessonViewerPage() {
                     </pre>
                 );
             case 'image':
-                return <img src={content_url} alt={title || "Material image"} className="max-w-full h-auto rounded-lg shadow-md" />;
+                return <img src={content_url} alt={title || "Material image"} className="max-w-full h-auto rounded-lg shadow-md dark:shadow-none" />;
             case 'pdf':
                 return (
-                    <div className="w-full h-[600px] bg-gray-100 rounded-lg overflow-hidden">
+                    <div className="w-full h-[600px] bg-gray-100 rounded-lg overflow-hidden dark:bg-gray-700">
                         <iframe src={content_url} className="w-full h-full" title={title || "PDF Viewer"}></iframe>
                         <p className="text-center mt-2">
-                            <a href={content_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            <a href={content_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:underline">
                                 Unduh PDF
                             </a>
                         </p>
                     </div>
                 );
             default:
-                return <p>Tipe materi tidak dikenal: {content_type}</p>;
+                return <p className="text-gray-600 dark:text-gray-300">Tipe materi tidak dikenal: {content_type}</p>;
         }
     };
 
     if (loading) {
         return (
             <MainLayout>
-                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl">
+                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl dark:text-gray-300">
                     Memuat pelajaran...
                 </div>
             </MainLayout>
@@ -421,7 +423,7 @@ export default function LessonViewerPage() {
     if (error) {
         return (
             <MainLayout>
-                <div className="flex-grow flex justify-center items-center text-red-600 text-xl">
+                <div className="flex-grow flex justify-center items-center text-red-600 text-xl dark:text-red-400">
                     Error: {error}
                 </div>
             </MainLayout>
@@ -431,7 +433,7 @@ export default function LessonViewerPage() {
     if (!lessonDetails) {
         return (
             <MainLayout>
-                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl">
+                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl dark:text-gray-300">
                     Pelajaran tidak ditemukan.
                 </div>
             </MainLayout>
@@ -444,53 +446,53 @@ export default function LessonViewerPage() {
 
     return (
         <MainLayout>
-            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl">
-                <header className="mb-6 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between">
+            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl dark:bg-dark-bg-secondary">
+                <header className="mb-6 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between dark:bg-dark-bg-tertiary">
                     <div className="flex items-center">
-                        <button onClick={handleGoBack} className="mr-4 text-gray-700 hover:text-gray-900">
+                        <button onClick={handleGoBack} className="mr-4 text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                             <ArrowLeftIcon className="h-6 w-6" />
                         </button>
                         <div className="flex items-center">
-                            <h1 className="text-3xl font-bold text-gray-900">{lessonDetails.title}</h1>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{lessonDetails.title}</h1>
                             {/* Icon di samping judul pelajaran */}
                             {completedLessons.has(lessonId) && (
-                                <CheckCircleIcon className="h-8 w-8 text-green-500 ml-3" />
+                                <CheckCircleIcon className="h-8 w-8 text-green-500 ml-3 dark:text-green-400" />
                             )}
                         </div>
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                         <span className="font-medium">{courseTitle}</span>
                     </div>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {/* Sidebar Navigasi Modul & Pelajaran */}
-                    <div className="md:col-span-1 bg-white p-4 rounded-xl shadow-md h-full overflow-y-auto max-h-[calc(100vh-120px)] sticky top-6">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Course Content</h2>
+                    <div className="md:col-span-1 bg-white p-4 rounded-xl shadow-md h-full overflow-y-auto max-h-[calc(100vh-120px)] sticky top-6 dark:bg-dark-bg-tertiary dark:shadow-none">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4 dark:text-white">Course Content</h2>
                         <nav className="space-y-4">
                             {courseModulesTree.map(module => (
                                 <div key={module.id}>
-                                    <h3 className="font-bold text-lg text-gray-900 flex items-center mb-2">
-                                        <BookOpenIcon className="h-5 w-5 mr-2 text-purple-600" />
+                                    <h3 className="font-bold text-lg text-gray-900 flex items-center mb-2 dark:text-white">
+                                        <BookOpenIcon className="h-5 w-5 mr-2 text-purple-600 dark:text-dark-accent-purple" />
                                         {module.title}
                                     </h3>
                                     {module.lessons && module.lessons.length > 0 ? (
-                                        <ul className="ml-4 border-l pl-3 space-y-1">
+                                        <ul className="ml-4 border-l pl-3 space-y-1 dark:border-gray-600">
                                             {module.lessons.map(lesson => (
                                                 <li key={lesson.id}>
                                                     <Link
                                                         to={`/course/${courseId}/lesson/${lesson.id}`}
                                                         className={`flex items-center py-2 px-3 rounded-md transition-colors duration-200 ${
                                                             lesson.id === lessonId
-                                                                ? 'bg-purple-500 text-white font-medium shadow-sm'
-                                                                : 'text-gray-700 hover:bg-gray-100 hover:text-purple-700'
+                                                                ? 'bg-purple-500 text-white font-medium shadow-sm dark:bg-dark-accent-purple dark:text-white dark:shadow-none'
+                                                                : 'text-gray-700 hover:bg-gray-100 hover:text-purple-700 dark:text-gray-300 dark:hover:bg-dark-bg-secondary dark:hover:text-dark-accent-purple'
                                                         }`}
                                                     >
                                                         {/* Icon di sidebar lesson - kini menggunakan `completedLessons` */}
                                                         {completedLessons.has(lesson.id) ? (
-                                                            <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
+                                                            <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500 dark:text-green-400" />
                                                         ) : (
-                                                            <PlayCircleIcon className="h-4 w-4 mr-2" />
+                                                            <PlayCircleIcon className="h-4 w-4 mr-2 dark:text-gray-300" /> 
                                                         )}
                                                         {lesson.title}
                                                     </Link>
@@ -498,7 +500,7 @@ export default function LessonViewerPage() {
                                             ))}
                                         </ul>
                                     ) : (
-                                        <p className="text-gray-500 text-sm ml-4 italic">No lessons in this module.</p>
+                                        <p className="text-gray-500 text-sm ml-4 italic dark:text-gray-400">No lessons in this module.</p>
                                     )}
                                 </div>
                             ))}
@@ -506,32 +508,32 @@ export default function LessonViewerPage() {
                     </div>
 
                     {/* Konten Pelajaran Utama */}
-                    <div className="md:col-span-3 bg-white p-6 rounded-xl shadow-md">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Lesson Content</h2>
+                    <div className="md:col-span-3 bg-white p-6 rounded-xl shadow-md dark:bg-dark-bg-tertiary dark:shadow-none">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4 dark:text-white">Lesson Content</h2>
                         
                         {materials.length > 0 ? (
                             <div className="space-y-8">
                                 {materials.map((material, index) => (
-                                    <div key={material.material_id || index} className="pb-6 border-b border-gray-200 last:border-b-0 last:pb-0">
+                                    <div key={material.material_id || index} className="pb-6 border-b border-gray-200 last:border-b-0 last:pb-0 dark:border-gray-700">
                                         {renderMaterial(material)}
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-gray-600">Tidak ada materi ditemukan untuk pelajaran ini.</p>
+                            <p className="text-gray-600 dark:text-gray-300">Tidak ada materi ditemukan untuk pelajaran ini.</p>
                         )}
 
                         {/* Navigasi antar pelajaran */}
-                        <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
+                        <div className="flex justify-between mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
                             {prevLesson ? (
                                 <Link
                                     to={`/course/${courseId}/lesson/${prevLesson.id}`}
-                                    className="flex items-center px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                                    className="flex items-center px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                                 >
                                     <ChevronLeftIcon className="h-5 w-5 mr-2" /> Previous Lesson
                                 </Link>
                             ) : (
-                                <button disabled className="flex items-center px-4 py-2 bg-gray-100 text-gray-500 rounded-md cursor-not-allowed">
+                                <button disabled className="flex items-center px-4 py-2 bg-gray-100 text-gray-500 rounded-md cursor-not-allowed dark:bg-gray-800 dark:text-gray-500">
                                     <ChevronLeftIcon className="h-5 w-5 mr-2" /> Previous Lesson
                                 </button>
                             )}
@@ -541,7 +543,7 @@ export default function LessonViewerPage() {
                                     onClick={handleNextLessonNavigation}
                                     disabled={nextButtonLoading || isCompletingCourse}
                                     className={`flex items-center px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300
-                                        ${isCompletingCourse ? 'bg-green-600 animate-pulse' : 'bg-green-500 hover:bg-green-600'}
+                                        ${isCompletingCourse ? 'bg-green-600 animate-pulse' : 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700'}
                                         disabled:opacity-50 disabled:cursor-not-allowed transform ${isCompletingCourse ? 'scale-105' : ''}`
                                     }
                                 >
@@ -559,7 +561,7 @@ export default function LessonViewerPage() {
                                 <button
                                     onClick={handleNextLessonNavigation}
                                     disabled={nextButtonLoading}
-                                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
+                                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 dark:bg-dark-accent-purple dark:hover:bg-purple-800"
                                 >
                                     {nextButtonLoading ? 'Loading...' : 'Next Lesson'} 
                                     <ChevronRightIcon className="h-5 w-5 ml-2" />

@@ -1,7 +1,7 @@
-// frontend/src/pages/QuizPage.jsx
+// my-frontend/src/pages/QuizPage.jsx
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, recordDailyActivity } from '../lib/supabaseClient'; // Import recordDailyActivity
 import MainLayout from '../components/mainLayout';
 import { AuthContext } from '../context/AuthContext';
 import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
@@ -193,14 +193,13 @@ export default function QuizPage() {
                     user_id: user.id,
                     quiz_id: quizDetails.id,
                     score_obtained: correctCount,
-                    // Hapus baris 'total_questions' karena tidak ada di skema DB Anda
-                    // atau ubah namanya jika ada kolom yang setara di DB Anda
                     is_passed: isPassed,
-                    // attempted_at sudah ada di DB, jadi biarkan seperti ini
                     attempted_at: new Date().toISOString(), 
                 });
                 if (saveError) throw saveError;
                 console.log("Quiz results saved to database.");
+                // --- BARIS BARU: Catat aktivitas harian untuk percobaan kuis ---
+                await recordDailyActivity(user.id, 'quiz_attempted', 1);
             } catch (err) {
                 console.error("Error saving quiz results:", err.message);
             }
@@ -223,7 +222,7 @@ export default function QuizPage() {
     if (loading) {
         return (
             <MainLayout>
-                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl">
+                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl dark:text-gray-300">
                     Memuat kuis...
                 </div>
             </MainLayout>
@@ -233,7 +232,7 @@ export default function QuizPage() {
     if (error) {
         return (
             <MainLayout>
-                <div className="flex-grow flex justify-center items-center text-red-600 text-xl">
+                <div className="flex-grow flex justify-center items-center text-red-600 text-xl dark:text-red-400">
                     Error: {error}
                 </div>
             </MainLayout>
@@ -243,7 +242,7 @@ export default function QuizPage() {
     if (!quizDetails || questions.length === 0) {
         return (
             <MainLayout>
-                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl">
+                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl dark:text-gray-300">
                     Kuis tidak ditemukan atau belum ada pertanyaan.
                 </div>
             </MainLayout>
@@ -254,36 +253,36 @@ export default function QuizPage() {
 
     return (
         <MainLayout>
-            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)]">
-                <header className="mb-6 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between">
+            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)] dark:bg-dark-bg-secondary">
+                <header className="mb-6 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between dark:bg-dark-bg-tertiary">
                     <div className="flex items-center">
-                        <button onClick={handleGoBack} className="mr-4 text-gray-700 hover:text-gray-900">
+                        <button onClick={handleGoBack} className="mr-4 text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                             <ArrowLeftIcon className="h-6 w-6" />
                         </button>
-                        <h1 className="text-3xl font-bold text-gray-900">{quizDetails.title}</h1>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{quizDetails.title}</h1>
                     </div>
                     {quizDetails.description && (
-                        <p className="text-sm text-gray-600">{quizDetails.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{quizDetails.description}</p>
                     )}
                 </header>
 
-                <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-center">
+                <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-center dark:bg-dark-bg-tertiary dark:shadow-none">
                     {!quizCompleted ? (
                         <>
                             <div className="w-full text-center mb-6">
-                                <p className="text-lg text-gray-600 mb-2">
+                                <p className="text-lg text-gray-600 mb-2 dark:text-gray-300">
                                     Pertanyaan {currentQuestionIndex + 1} dari {questions.length}
                                 </p>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                                     <div 
-                                        className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" 
+                                        className="bg-purple-600 h-2.5 rounded-full transition-all duration-300 dark:bg-dark-accent-purple" 
                                         style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                                     ></div>
                                 </div>
                             </div>
                             
                             <div className="w-full max-w-2xl">
-                                <h3 className="text-xl font-semibold mb-6 text-gray-800">
+                                <h3 className="text-xl font-semibold mb-6 text-gray-800 dark:text-white">
                                     {currentQuestion.question_text}
                                 </h3>
                                <div className="space-y-4">
@@ -294,22 +293,22 @@ export default function QuizPage() {
                                                 onClick={() => handleOptionSelect(currentQuestion.id, option.id)}
                                                 className={`w-full text-left p-4 rounded-lg border-2 transition-colors duration-200
                                                     ${userAnswers[currentQuestion.id] === option.id
-                                                        ? 'border-purple-600 bg-purple-50 text-purple-800'
-                                                        : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                                                        ? 'border-purple-600 bg-purple-50 text-purple-800 dark:border-dark-accent-purple dark:bg-dark-accent-purple dark:bg-opacity-20 dark:text-dark-accent-purple'
+                                                        : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100'
                                                     }`}
                                             >
                                                 {option.option_text} 
                                             </button>
                                         ))
                                     ) : (
-                                        <p className="text-red-500">Opsi tidak tersedia untuk pertanyaan ini.</p>
+                                        <p className="text-red-500 dark:text-red-400">Opsi tidak tersedia untuk pertanyaan ini.</p>
                                     )}
                                 </div>
                                 <div className="mt-8 flex justify-end">
                                     <button
                                         onClick={handleNextQuestion}
                                         disabled={!userAnswers[currentQuestion.id]}
-                                        className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-dark-accent-purple dark:hover:bg-purple-800"
                                     >
                                         {currentQuestionIndex === questions.length - 1 ? 'Submit Quiz' : 'Next Question'}
                                     </button>
@@ -318,34 +317,34 @@ export default function QuizPage() {
                         </>
                     ) : (
                         <div className="w-full max-w-2xl text-center">
-                            <h2 className="text-3xl font-bold mb-4 text-gray-900">Quiz Completed!</h2>
-                            <p className="text-2xl text-gray-700 mb-6">Your Score: <span className="font-bold text-purple-600">{score}</span> / {questions.length}</p>
+                            <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Quiz Completed!</h2>
+                            <p className="text-2xl text-gray-700 mb-6 dark:text-gray-200">Your Score: <span className="font-bold text-purple-600 dark:text-dark-accent-purple">{score}</span> / {questions.length}</p>
                             
                             {quizDetails.pass_score !== null && (
-                                <p className={`text-xl font-semibold mb-8 ${score >= quizDetails.pass_score ? 'text-green-600' : 'text-red-600'}`}>
+                                <p className={`text-xl font-semibold mb-8 ${score >= quizDetails.pass_score ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
                                     {score >= quizDetails.pass_score ? 'You Passed!' : `You Did Not Pass. Passing score: ${quizDetails.pass_score}`}
                                 </p>
                             )}
 
                             {showResults && (
-                                <div className="mt-8 text-left border-t pt-6">
-                                    <h3 className="text-2xl font-semibold mb-4 text-gray-800">Review Your Answers</h3>
+                                <div className="mt-8 text-left border-t pt-6 dark:border-gray-700">
+                                    <h3 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Review Your Answers</h3>
                                     <div className="space-y-6">
                                         {questions.map((question, index) => (
-                                            <div key={question.id} className="p-4 border rounded-lg bg-gray-50">
+                                            <div key={question.id} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                                                 <div className="flex items-start mb-2">
                                                     {feedback[question.id]?.isCorrect ? (
-                                                        <SolidCheckCircleIcon className="h-6 w-6 text-green-500 mr-2 flex-shrink-0" />
+                                                        <SolidCheckCircleIcon className="h-6 w-6 text-green-500 mr-2 flex-shrink-0 dark:text-green-400" />
                                                     ) : (
-                                                        <SolidXCircleIcon className="h-6 w-6 text-red-500 mr-2 flex-shrink-0" />
+                                                        <SolidXCircleIcon className="h-6 w-6 text-red-500 mr-2 flex-shrink-0 dark:text-red-400" />
                                                     )}
-                                                    <p className="font-semibold text-gray-900 text-lg flex-grow">
+                                                    <p className="font-semibold text-gray-900 text-lg flex-grow dark:text-white">
                                                         {index + 1}. {question.question_text}
                                                     </p>
                                                 </div>
-                                                <p className="text-gray-700 mb-2 ml-8">Your Answer: {question.options.find(opt => opt.id === userAnswers[question.id])?.option_text || 'Not answered'}</p>
+                                                <p className="text-gray-700 mb-2 ml-8 dark:text-gray-300">Your Answer: {question.options.find(opt => opt.id === userAnswers[question.id])?.option_text || 'Not answered'}</p>
                                                 {!feedback[question.id]?.isCorrect && feedback[question.id]?.correctAnswer && (
-                                                    <p className="text-green-600 ml-8">Correct Answer: {feedback[question.id]?.correctAnswer}</p>
+                                                    <p className="text-green-600 ml-8 dark:text-green-500">Correct Answer: {feedback[question.id]?.correctAnswer}</p>
                                                 )}
                                             </div>
                                         ))}
@@ -356,13 +355,13 @@ export default function QuizPage() {
                             <div className="mt-8 flex justify-center space-x-4">
                                 <button
                                     onClick={handleRetakeQuiz}
-                                    className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                                    className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors dark:bg-blue-600 dark:hover:bg-blue-700"
                                 >
                                     Retake Quiz
                                 </button>
                                 <button
                                     onClick={handleGoBack}
-                                    className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+                                    className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition-colors dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                                 >
                                     Back to Dashboard
                                 </button>

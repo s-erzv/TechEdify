@@ -16,7 +16,7 @@ export default function HistoryPage() {
         const fetchHistoryData = async () => {
             if (!user) {
                 setLoading(false);
-                setError('Anda harus login untuk melihat riwayat.');
+                setError('You must be logged in to view history.');
                 return;
             }
 
@@ -77,7 +77,7 @@ export default function HistoryPage() {
                         id: `quiz-${attempt.id}`,
                         type: 'quiz_attempt',
                         date: new Date(attempt.attempted_at),
-                        title: attempt.quizzes?.title || 'Kuis Tidak Dikenal',
+                        title: attempt.quizzes?.title || 'Unknown Quiz',
                         score: attempt.score_obtained,
                         isPassed: attempt.is_passed,
                     });
@@ -89,7 +89,7 @@ export default function HistoryPage() {
                         id: `lesson-${completion.id}`,
                         type: 'lesson_completion',
                         date: new Date(completion.completed_at),
-                        title: completion.lessons?.title || 'Pelajaran Tidak Dikenal',
+                        title: completion.lessons?.title || 'Unknown Lesson',
                         moduleTitle: completion.lessons?.modules?.title,
                         courseTitle: completion.lessons?.modules?.courses?.title,
                     });
@@ -102,7 +102,7 @@ export default function HistoryPage() {
                 // Format Course Progress (sudah diurutkan dari query)
                 const formattedCourseProgress = courseProgresses.map(progress => ({
                     id: progress.id,
-                    courseTitle: progress.courses?.title || 'Kursus Tidak Dikenal',
+                    courseTitle: progress.courses?.title || 'Unknown Course',
                     percentage: progress.progress_percentage,
                     isCompleted: progress.is_completed,
                     startedAt: new Date(progress.started_at),
@@ -113,7 +113,7 @@ export default function HistoryPage() {
 
             } catch (err) {
                 console.error('Error fetching history data:', err.message);
-                setError('Gagal memuat riwayat aktivitas: ' + err.message);
+                setError('Failed to load activity history: ' + err.message);
             } finally {
                 setLoading(false);
             }
@@ -125,7 +125,7 @@ export default function HistoryPage() {
     }, [user]);
 
     const formatDateTime = (date) => {
-        return date.toLocaleString('id-ID', {
+        return date.toLocaleString('en-US', { // Menggunakan 'en-US' untuk format English
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -136,7 +136,7 @@ export default function HistoryPage() {
     };
 
     const formatDate = (date) => {
-        return date.toLocaleDateString('id-ID', {
+        return date.toLocaleDateString('en-US', { // Menggunakan 'en-US' untuk format English
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -146,8 +146,8 @@ export default function HistoryPage() {
     if (loading) {
         return (
             <MainLayout>
-                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl">
-                    Memuat riwayat aktivitas...
+                <div className="flex-grow flex justify-center items-center text-gray-700 text-xl dark:text-gray-300">
+                    Loading activity history...
                 </div>
             </MainLayout>
         );
@@ -156,7 +156,7 @@ export default function HistoryPage() {
     if (error) {
         return (
             <MainLayout>
-                <div className="flex-grow flex justify-center items-center text-red-600 text-xl">
+                <div className="flex-grow flex justify-center items-center text-red-600 text-xl dark:text-red-400">
                     Error: {error}
                 </div>
             </MainLayout>
@@ -165,53 +165,53 @@ export default function HistoryPage() {
 
     return (
         <MainLayout>
-            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)]">
-                <header className="mb-8 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between">
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                        <ClockIcon className="h-8 w-8 mr-3 text-purple-600" /> Riwayat Aktivitas Saya
+            <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)] dark:bg-dark-bg-secondary">
+                <header className="mb-8 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between dark:bg-dark-bg-tertiary">
+                    <h1 className="text-3xl font-bold text-gray-900 flex items-center dark:text-white">
+                        <ClockIcon className="h-8 w-8 mr-3 text-purple-600 dark:text-dark-accent-purple" /> My Activity History
                     </h1>
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Card 1: Riwayat Aktivitas (Kuis & Pelajaran) */}
-                    <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                            <ClipboardDocumentCheckIcon className="h-7 w-7 mr-2 text-blue-500" /> Riwayat Kuis & Pelajaran
+                    <div className="bg-white p-6 rounded-xl shadow-md dark:bg-dark-bg-tertiary">
+                        <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center dark:text-white">
+                            <ClipboardDocumentCheckIcon className="h-7 w-7 mr-2 text-blue-500 dark:text-blue-400" /> Quiz & Lesson History
                         </h2>
                         {activityHistory.length > 0 ? (
-                            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2  scrollbar-hide"> {/* Tambah scrollbar */}
+                            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 scrollbar-hide"> {/* Tambah scrollbar */}
                                 {activityHistory.map((item) => (
-                                    <div key={item.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex items-start space-x-4">
+                                    <div key={item.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex items-start space-x-4 dark:border-gray-700 dark:bg-gray-800">
                                         {item.type === 'quiz_attempt' && (
                                             <div className="flex-shrink-0">
-                                                <ClipboardDocumentCheckIcon className="h-8 w-8 text-blue-500" />
+                                                <ClipboardDocumentCheckIcon className="h-8 w-8 text-blue-500 dark:text-blue-400" />
                                             </div>
                                         )}
                                         {item.type === 'lesson_completion' && (
                                             <div className="flex-shrink-0">
-                                                <AcademicCapIcon className="h-8 w-8 text-green-500" />
+                                                <AcademicCapIcon className="h-8 w-8 text-green-500 dark:text-green-400" />
                                             </div>
                                         )}
                                         <div className="flex-grow">
-                                            <p className="font-semibold text-gray-800">
+                                            <p className="font-semibold text-gray-800 dark:text-white">
                                                 {item.type === 'quiz_attempt' ? (
                                                     <>
-                                                        Anda mengikuti kuis "{item.title}" &mdash; Skor: <span className="text-purple-600 font-bold">{item.score}</span> {item.isPassed ? <span className="text-green-600">(Lulus)</span> : <span className="text-red-600">(Tidak Lulus)</span>}
+                                                        You took quiz "{item.title}" — Score: <span className="text-purple-600 font-bold dark:text-dark-accent-purple">{item.score}</span> {item.isPassed ? <span className="text-green-600 dark:text-green-500">(Passed)</span> : <span className="text-red-600 dark:text-red-500">(Failed)</span>}
                                                     </>
                                                 ) : (
                                                     <>
-                                                        Anda menyelesaikan pelajaran "{item.title}"
+                                                        You completed lesson "{item.title}"
                                                     </>
                                                 )}
                                             </p>
                                             {item.type === 'lesson_completion' && (item.moduleTitle || item.courseTitle) && (
-                                                <p className="text-sm text-gray-600 mt-1">
-                                                    {item.moduleTitle && `Modul: ${item.moduleTitle}`}
+                                                <p className="text-sm text-gray-600 mt-1 dark:text-gray-300">
+                                                    {item.moduleTitle && `Module: ${item.moduleTitle}`}
                                                     {item.moduleTitle && item.courseTitle && ` | `}
-                                                    {item.courseTitle && `Kursus: ${item.courseTitle}`}
+                                                    {item.courseTitle && `Course: ${item.courseTitle}`}
                                                 </p>
                                             )}
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
                                                 {formatDateTime(item.date)}
                                             </p>
                                         </div>
@@ -219,52 +219,52 @@ export default function HistoryPage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center text-gray-600 text-lg py-10">
-                                Belum ada riwayat kuis atau pelajaran.
+                            <div className="text-center text-gray-600 text-lg py-10 dark:text-gray-400">
+                                No quiz or lesson history yet.
                             </div>
                         )}
                     </div>
 
                     {/* Card 2: Riwayat Progres Kursus */}
-                    <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                            <BookOpenIcon className="h-7 w-7 mr-2 text-purple-600" /> Progres Kursus Anda
+                    <div className="bg-white p-6 rounded-xl shadow-md dark:bg-dark-bg-tertiary">
+                        <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center dark:text-white">
+                            <BookOpenIcon className="h-7 w-7 mr-2 text-purple-600 dark:text-dark-accent-purple" /> Your Course Progress
                         </h2>
                         {courseProgressHistory.length > 0 ? (
                             <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2"> {/* Tambah scrollbar */}
                                 {courseProgressHistory.map((progress) => (
-                                    <div key={progress.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex flex-col space-y-2">
+                                    <div key={progress.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex flex-col space-y-2 dark:border-gray-700 dark:bg-gray-800">
                                         <div className="flex items-center justify-between">
-                                            <p className="font-semibold text-gray-800">{progress.courseTitle}</p>
+                                            <p className="font-semibold text-gray-800 dark:text-white">{progress.courseTitle}</p>
                                             {progress.isCompleted ? (
-                                                <span className="flex items-center text-green-600 text-sm font-medium">
-                                                    <SolidCheckCircleIcon className="h-5 w-5 mr-1" /> Selesai
+                                                <span className="flex items-center text-green-600 text-sm font-medium dark:text-green-500">
+                                                    <SolidCheckCircleIcon className="h-5 w-5 mr-1" /> Completed
                                                 </span>
                                             ) : (
-                                                <span className="text-purple-600 font-bold text-lg">{progress.percentage}%</span>
+                                                <span className="text-purple-600 font-bold text-lg dark:text-dark-accent-purple">{progress.percentage}%</span>
                                             )}
                                         </div>
                                         
                                         {!progress.isCompleted && (
-                                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                                                 <div 
-                                                    className="bg-purple-500 h-2.5 rounded-full" 
+                                                    className="bg-purple-500 h-2.5 rounded-full dark:bg-dark-accent-purple" 
                                                     style={{ width: `${progress.percentage}%` }}
                                                 ></div>
                                             </div>
                                         )}
 
-                                        <p className="text-xs text-gray-500">
-                                            Dimulai: {formatDate(progress.startedAt)}
-                                            {progress.completedAt && ` | Selesai: ${formatDate(progress.completedAt)}`}
-                                            {!progress.isCompleted && ` | Terakhir Diakses: ${formatDate(progress.lastAccessedAt)}`}
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Started: {formatDate(progress.startedAt)}
+                                            {progress.completedAt && ` | Completed: ${formatDate(progress.completedAt)}`}
+                                            {!progress.isCompleted && ` | Last Accessed: ${formatDate(progress.lastAccessedAt)}`}
                                         </p>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center text-gray-600 text-lg py-10">
-                                Anda belum memulai kursus apa pun.
+                            <div className="text-center text-gray-600 text-lg py-10 dark:text-gray-400">
+                                You haven't started any courses yet.
                             </div>
                         )}
                     </div>

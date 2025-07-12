@@ -1,32 +1,34 @@
-import { useState, useEffect, useContext } from 'react'; // Tambahkan useContext
-import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabaseClient'; // Pastikan path ini benar
-import AdminLayout from '../../components/AdminLayout';
-import { AuthContext } from '../../context/AuthContext'; // Import AuthContext
+// frontend/src/pages/admin/Dashboard.jsx
+import React, { useState, useEffect, useContext } from 'react';
+import { supabase } from '../../lib/supabaseClient';
+import AdminLayout from '../../components/AdminLayout'; // Menggunakan AdminLayout
+import { AuthContext } from '../../context/AuthContext';
+import { Link } from 'react-router-dom'; // <--- PASTIKAN BARIS INI ADA DAN BENAR
 
 import {
   MagnifyingGlassIcon,
   BellIcon,
-  ChevronDownIcon,
   UsersIcon,
-  CubeIcon, // Untuk Modul Aktif (sesuai schema courses.is_published atau modules.is_active)
+  CubeIcon, 
   UserPlusIcon,
   ClipboardDocumentListIcon,
-  ChartBarIcon,
-  ClockIcon,
-  BookOpenIcon,
-  PlusCircleIcon
-} from '@heroicons/react/24/outline';
+  ChartBarIcon, 
+  BookOpenIcon, 
+  PlusCircleIcon 
+} from '@heroicons/react/24/outline'; // Pastikan semua ikon diimpor dari @heroicons/react/24/outline
 
 
 export default function AdminDashboard() {
-  const { logout } = useContext(AuthContext); // Gunakan useContext untuk mendapatkan fungsi logout
+  const { signOut, user, profile } = useContext(AuthContext); 
+  // AdminDashboard tidak menggunakan navigate dari react-router-dom secara langsung dari sini
+  // karena navigasi akan dihandle oleh SidebarAdmin atau AdminLayout
 
+  // State untuk data statistik
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
-    activeModules: 0, // Akan diisi dari database
-    newRegistrationsToday: 0, // Akan diisi dari database
-    pendingTasks: 0, // Masih hardcode atau dari tabel tasks jika ada
+    activeModules: 0, 
+    newRegistrationsToday: 0, 
+    pendingTasks: 3, 
   });
 
   const [recentActivities, setRecentActivities] = useState([]);
@@ -50,15 +52,15 @@ export default function AdminDashboard() {
         const { count: activeModulesCount, error: modulesError } = await supabase
           .from('modules')
           .select('id', { count: 'exact', head: true })
-          .eq('is_active', true); // QUERY INI SEKARANG HARUSNYA BERHASIL!
+          .eq('is_active', true); 
 
         if (modulesError) throw modulesError;
 
         // 3. Ambil Pendaftaran Baru Hari Ini dari 'profiles'
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set to start of today
+        today.setHours(0, 0, 0, 0); 
         const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1); // Set to start of tomorrow
+        tomorrow.setDate(today.getDate() + 1); 
 
         const { count: newRegCount, error: regError } = await supabase
           .from('profiles')
@@ -68,98 +70,122 @@ export default function AdminDashboard() {
 
         if (regError) throw regError;
 
-        // 4. Ambil Tugas Tertunda (Simulasi, karena tidak ada tabel 'tasks' di skema yang diberikan)
-        // Jika Anda ingin ini dinamis, Anda perlu tabel terpisah untuk 'tasks' admin.
-        const pendingTasksCount = 3; // Tetap hardcode untuk saat ini
-
-
         setDashboardStats({
           totalUsers: totalUsersCount || 0,
-          activeModules: activeModulesCount || 0, // Menggunakan data dari Supabase
-          newRegistrationsToday: newRegCount || 0, // Menggunakan data dari Supabase
-          pendingTasks: pendingTasksCount,
+          activeModules: activeModulesCount || 0, 
+          newRegistrationsToday: newRegCount || 0, 
+          pendingTasks: dashboardStats.pendingTasks, 
         });
 
-        // 5. Ambil Aktivitas Terbaru (Jika Anda punya tabel 'activities' atau custom logs)
-        // Menggunakan data simulasi untuk sekarang. Anda bisa mengaktifkan bagian ini
-        // jika Anda membuat tabel 'activities' untuk log peristiwa.
-        /*
-        const { data: fetchedActivities, error: activitiesError } = await supabase
-            .from('activities') // Pastikan tabel ini ada dan berisi data log
-            .select('*')
+        // 4. Ambil Aktivitas Terbaru
+        // Fetch dari user_quiz_attempts dan user_lessons_completion, serta profiles untuk pendaftaran baru
+        const { data: quizAttempts, error: quizError } = await supabase
+            .from('user_quiz_attempts')
+            .select(`
+                id, attempted_at, score_obtained, is_passed,
+                quizzes(title), profiles(username, full_name)
+            `)
+            .order('attempted_at', { ascending: false })
+            .limit(5);
+        if (quizError) throw quizError;
+
+        const { data: lessonCompletions, error: lessonError } = await supabase
+            .from('user_lessons_completion')
+            .select(`
+                id, completed_at, 
+                lessons(title, modules(title, courses(title))), 
+                profiles(username, full_name)
+            `)
+            .order('completed_at', { ascending: false })
+            .limit(5);
+        if (lessonError) throw lessonError;
+
+        const { data: newRegistrations, error: regActivitiesError } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, created_at')
             .order('created_at', { ascending: false })
             .limit(5);
+        if (regActivitiesError) throw regActivitiesError;
 
-        if (activitiesError) throw activitiesError;
 
-        const mappedActivities = fetchedActivities.map(activity => ({
-            id: activity.id,
-            type: activity.type.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-            description: activity.description,
-            time: new Date(activity.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }),
-            icon: activity.type === 'user_registered' ? UserPlusIcon :
-                  activity.type === 'module_updated' ? BookOpenIcon :
-                  activity.type === 'lesson_added' ? PlusCircleIcon :
-                  activity.type === 'user_login' ? UsersIcon :
-                  ClipboardDocumentListIcon, // default icon
-            iconColor: activity.type === 'user_registered' ? 'text-green-500' :
-                       activity.type === 'module_updated' ? 'text-blue-500' :
-                       activity.type === 'lesson_added' ? 'text-purple-500' :
-                       activity.type === 'user_login' ? 'text-indigo-500' :
-                       'text-gray-500',
-        }));
-        setRecentActivities(mappedActivities);
-        */
+        const combinedActivities = [];
 
-        // Simulasi aktivitas terbaru jika tabel 'activities' belum ada
-        setRecentActivities([
-          { id: 1, type: 'User Registered', description: 'John Doe baru saja mendaftar.', time: '2 jam lalu', icon: UserPlusIcon, iconColor: 'text-green-500' },
-          { id: 2, type: 'Module Updated', description: 'Modul "Pengembangan Web" diperbarui.', time: 'Kemarin', icon: BookOpenIcon, iconColor: 'text-blue-500' },
-          { id: 3, type: 'Lesson Added', description: 'Pelajaran "React Hooks" ditambahkan.', time: '3 hari lalu', icon: PlusCircleIcon, iconColor: 'text-purple-500' },
-          { id: 4, type: 'User Login', description: 'Jane Smith login ke sistem.', time: '1 jam lalu', icon: UsersIcon, iconColor: 'text-indigo-500' },
-          { id: 5, type: 'Quiz Completed', description: 'Ali menyelesaikan kuis "Basis Data".', time: '4 jam lalu', icon: ClipboardDocumentListIcon, iconColor: 'text-yellow-500' },
-        ]);
+        quizAttempts.forEach(attempt => {
+            if (attempt.profiles) { 
+                const userName = attempt.profiles.username || attempt.profiles.full_name || 'Unknown User';
+                combinedActivities.push({
+                    id: `quiz-${attempt.id}`,
+                    type: 'Quiz Completed',
+                    description: `${userName} completed quiz "${attempt.quizzes?.title || 'Unknown'}" with score ${attempt.score_obtained}.`,
+                    time: new Date(attempt.attempted_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+                    icon: ClipboardDocumentListIcon,
+                    iconColor: 'text-yellow-500', 
+                });
+            }
+        });
+
+        lessonCompletions.forEach(completion => {
+            if (completion.profiles) { 
+                const userName = completion.profiles.username || completion.profiles.full_name || 'Unknown User';
+                combinedActivities.push({
+                    id: `lesson-${completion.id}`,
+                    type: 'Lesson Completed',
+                    description: `${userName} completed lesson "${completion.lessons?.title || 'Unknown'}" in course "${completion.lessons?.modules?.courses?.title || 'Unknown'}".`,
+                    time: new Date(completion.completed_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+                    icon: BookOpenIcon,
+                    iconColor: 'text-green-500', 
+                });
+            }
+        });
+
+        newRegistrations.forEach(reg => {
+            const userName = reg.username || reg.full_name || 'Unknown User';
+            combinedActivities.push({
+                id: `reg-${reg.id}`,
+                type: 'User Registered',
+                description: `${userName} just registered to the system.`,
+                time: new Date(reg.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+                icon: UserPlusIcon,
+                iconColor: 'text-blue-500', 
+            });
+        });
+
+        // Urutkan aktivitas berdasarkan waktu (terbaru lebih dulu)
+        combinedActivities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        setRecentActivities(combinedActivities.slice(0, 5)); 
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error.message);
-        setErrorStats('Gagal memuat data dashboard: ' + error.message);
-        setDashboardStats({ totalUsers: 0, activeModules: 0, newRegistrationsToday: 0, pendingTasks: 0 });
+        setErrorStats('Failed to load dashboard data: ' + error.message);
+        setDashboardStats({ totalUsers: 0, activeModules: 0, newRegistrationsToday: 0, pendingTasks: 0 }); 
       } finally {
         setLoadingStats(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [user, dashboardStats.pendingTasks]); 
 
-  // Placeholder for user data (replace with actual admin user data)
-  // Ini bisa diambil dari user Supabase yang sedang login jika admin juga login via Supabase Auth
-  const adminUser = {
-    user_metadata: {
-      first_name: "Admin",
-      avatar_url: "/default-admin-avatar.jpg" // Pastikan gambar ini ada di folder public Anda
-    },
-    email: "admin@example.com"
-  };
+  const adminUserName = profile?.username || profile?.full_name || user?.email?.split('@')[0] || 'Admin';
+  const adminAvatarUrl = profile?.avatar_url || '/default-admin-avatar.jpg';
 
-  const adminUserName = adminUser?.user_metadata?.first_name || adminUser?.email?.split('@')[0] || 'Admin';
 
   if (loadingStats) {
     return (
-      <div className="flex-grow flex justify-center items-center text-gray-500 text-lg">
-          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <div className="flex-grow flex justify-center items-center text-gray-500 text-lg dark:text-gray-400">
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          Memuat data dashboard...
+          Loading dashboard data...
         </div>
     );
   }
 
   if (errorStats) {
     return (
-      <div className="flex-grow flex justify-center items-center text-red-600 text-lg">
-          <svg className="h-6 w-6 mr-2 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <div className="flex-grow flex justify-center items-center text-red-600 text-lg dark:text-red-400">
+          <svg className="h-6 w-6 mr-2 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           Error: {errorStats}
@@ -168,172 +194,173 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex-grow h-[95vh] scrollbar-hide overflow-y-auto p-6 bg-[#F9F9FB] rounded-xl">
-        {/* Header - Mimicking the user dashboard header */}
-        <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Hi, {adminUserName}!</h1>
+    <div className="flex-grow h-[95vh] scrollbar-hide overflow-y-auto p-6 bg-[#F9F9FB] rounded-xl dark:bg-adminDark-bg-secondary">
+      {/* Header - Mimicking the user dashboard header */}
+      <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-md mb-6 dark:bg-adminDark-bg-tertiary dark:shadow-none">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hi, {adminUserName}!</h1>
 
-          <div className="flex items-center space-x-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="search"
-                className="py-2 pl-10 pr-4 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-200"
-              />
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
-            </div>
-
-            {/* Notification */}
-            <div className="relative">
-              <BellIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-            </div>
-
-            {/* User Profile and Logout Button */}
-            <div className="flex items-center space-x-2">
-              <img
-                src={adminUser?.user_metadata?.avatar_url || '/default-admin-avatar.jpg'}
-                alt="Admin Avatar"
-                className="h-10 w-10 rounded-full object-cover border-2 border-purple-300"
-              />
-              {/* Tambahkan tombol Logout di sini */}
-              <button
-                onClick={logout} // Panggil fungsi logout dari AuthContext
-                className="bg-purple-600 text-white text-sm font-semibold py-2 px-4 rounded-full hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
-              >
-                Logout
-              </button>
-            </div>
+        <div className="flex items-center space-x-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search"
+              className="py-2 pl-10 pr-4 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-adminDark-accent-green"
+            />
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 dark:text-gray-400" />
           </div>
-        </header>
 
-        {/* Dashboard Overview Section (Main Banner-like area for admin intro) */}
-        <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-6 rounded-xl shadow-md flex items-center justify-between relative overflow-hidden mb-6">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Admin Panel Overview</h2>
-            <p className="text-sm opacity-90 mb-4">
-              Selamat datang kembali, kelola aplikasi Tech Edify Anda dengan mudah!
-            </p>
-            <Link to="/admin/reports" className="bg-white text-purple-700 font-semibold py-2 px-6 rounded-full hover:bg-gray-100 transition-colors">
-              Lihat Laporan
-            </Link>
+          {/* Notification */}
+          <div className="relative">
+            <BellIcon className="h-6 w-6 text-gray-600 cursor-pointer dark:text-gray-300" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
           </div>
-          <ChartBarIcon className="absolute -right-4 -bottom-4 h-32 w-32 opacity-30 text-white" />
+
+          {/* User Profile and Logout Button */}
+          <div className="flex items-center space-x-2">
+            <img
+              src={adminAvatarUrl} 
+              alt="Admin Avatar"
+              className="h-10 w-10 rounded-full object-cover border-2 border-purple-300 dark:border-adminDark-accent-green"
+            />
+            {/* Tambahkan tombol Logout di sini */}
+            <button
+              onClick={signOut} 
+              className="bg-purple-600 text-white text-sm font-semibold py-2 px-4 rounded-full hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 dark:bg-adminDark-accent-green dark:hover:bg-green-700"
+            >
+              Logout
+            </button>
+          </div>
         </div>
+      </header>
 
-
-        {/* Bagian Statistik Ringkas - Styled like the user dashboard cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Kartu Total Pengguna */}
-            <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-start">
-              <div className="flex justify-between items-center w-full mb-3">
-                <h3 className="text-sm font-medium text-gray-600">Total Pengguna</h3>
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <UsersIcon className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{dashboardStats.totalUsers}</p>
-              <p className="text-xs text-gray-500 mt-1">Jumlah total pengguna terdaftar.</p>
-            </div>
-
-            {/* Kartu Modul Aktif */}
-            <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-start">
-              <div className="flex justify-between items-center w-full mb-3">
-                <h3 className="text-sm font-medium text-gray-600">Modul Aktif</h3>
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <CubeIcon className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{dashboardStats.activeModules}</p>
-              <p className="text-xs text-gray-500 mt-1">Jumlah modul yang saat ini aktif.</p>
-            </div>
-
-            {/* Kartu Pendaftaran Baru Hari Ini */}
-            <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-start">
-              <div className="flex justify-between items-center w-full mb-3">
-                <h3 className="text-sm font-medium text-gray-600">Pendaftaran Baru (Hari Ini)</h3>
-                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <UserPlusIcon className="h-6 w-6 text-yellow-600" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{dashboardStats.newRegistrationsToday}</p>
-              <p className="text-xs text-gray-500 mt-1">Pengguna baru yang mendaftar hari ini.</p>
-            </div>
-
-            {/* Kartu Tugas Tertunda */}
-            <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-start">
-              <div className="flex justify-between items-center w-full mb-3">
-                <h3 className="text-sm font-medium text-gray-600">Tugas Tertunda</h3>
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <ClipboardDocumentListIcon className="h-6 w-6 text-red-600" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{dashboardStats.pendingTasks}</p>
-              <p className="text-xs text-gray-500 mt-1">Tugas admin yang perlu diselesaikan.</p>
-            </div>
+      {/* Dashboard Overview Section (Main Banner-like area for admin intro) */}
+      <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-6 rounded-xl shadow-md flex items-center justify-between relative overflow-hidden mb-6 dark:bg-adminDark-accent-green dark:bg-opacity-50 dark:shadow-none">
+        <div>
+          <h2 className="text-2xl font-bold mb-2 dark:text-white">Admin Panel Overview</h2>
+          <p className="text-sm opacity-90 mb-4 dark:text-gray-200">
+            Welcome back, manage your Tech Edify application with ease!
+          </p>
+          <Link to="/admin/reports" className="bg-white text-purple-700 font-semibold py-2 px-6 rounded-full hover:bg-gray-100 transition-colors dark:bg-adminDark-bg-tertiary dark:text-white dark:hover:bg-gray-700">
+            View Reports
+          </Link>
         </div>
+        <ChartBarIcon className="absolute -right-4 -bottom-4 h-32 w-32 opacity-30 text-white" />
+      </div>
 
-        {/* Bagian Aktivitas Terbaru - Styled with enhanced icons and layout */}
-        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Aktivitas Terbaru</h2>
-            <ul className="divide-y divide-gray-200">
-            {recentActivities.map((activity) => (
-                <li key={activity.id} className="py-3 flex items-center space-x-3">
-                    <div className={`flex-shrink-0 ${activity.iconColor} p-2 rounded-full bg-gray-100`}>
-                        <activity.icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-grow flex justify-between items-center">
-                        <p className="text-gray-700">
-                            <span className="font-medium">{activity.type}:</span> {activity.description}
-                        </p>
-                        <span className="text-sm text-gray-500">{activity.time}</span>
-                    </div>
-                </li>
-            ))}
-            {recentActivities.length === 0 && (
-                <li className="py-3 text-center text-gray-500">Tidak ada aktivitas terbaru.</li>
-            )}
-            </ul>
-        </div>
 
-        {/* Bagian Tautan Cepat & Ringkasan Sistem - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-md">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Tautan Cepat</h2>
-                <ul className="space-y-3">
-                    <li>
-                        <Link to="/admin/users" className="flex items-center text-purple-600 hover:text-purple-800 transition-colors duration-200">
-                            <UsersIcon className="h-5 w-5 mr-2" /> Kelola Pengguna
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/admin/materials" className="flex items-center text-purple-600 hover:text-purple-800 transition-colors duration-200">
-                            <BookOpenIcon className="h-5 w-5 mr-2" /> Kelola Materi
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/admin/modules" className="flex items-center text-purple-600 hover:text-purple-800 transition-colors duration-200">
-                            <CubeIcon className="h-5 w-5 mr-2" /> Kelola Modul
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/admin/quizzes" className="flex items-center text-purple-600 hover:text-purple-800 transition-colors duration-200">
-                            <ClipboardDocumentListIcon className="h-5 w-5 mr-2" /> Kelola Kuis
-                        </Link>
-                    </li>
-                </ul>
+      {/* Bagian Statistik Ringkas - Styled like the user dashboard cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Kartu Total Pengguna */}
+          <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-start dark:bg-adminDark-bg-tertiary dark:shadow-none">
+            <div className="flex justify-between items-center w-full mb-3">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Users</h3>
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900 dark:bg-opacity-30">
+                <UsersIcon className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-md">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Ringkasan Sistem</h2>
-                <div className="space-y-2 text-gray-700 text-sm">
-                    <p><strong>Versi Aplikasi:</strong> 1.0.0</p>
-                    <p><strong>Status Server:</strong> <span className="text-green-600 font-medium">Online</span></p>
-                    <p><strong>Lokasi Server:</strong> South Tangerang, Banten, Indonesia</p>
-                    <p><strong>Waktu Terakhir Diperbarui:</strong> {new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}</p>
-                </div>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{loadingStats ? '...' : dashboardStats.totalUsers}</p>
+            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Total number of registered users.</p>
+          </div>
+
+          {/* Kartu Modul Aktif */}
+          <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-start dark:bg-adminDark-bg-tertiary dark:shadow-none">
+            <div className="flex justify-between items-center w-full mb-3">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Modules</h3>
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center dark:bg-green-900 dark:bg-opacity-30">
+                <CubeIcon className="h-6 w-6 text-green-600" />
+              </div>
             </div>
-        </div>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{loadingStats ? '...' : dashboardStats.activeModules}</p>
+            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Number of modules currently active.</p>
+          </div>
+
+          {/* Kartu Pendaftaran Baru Hari Ini */}
+          <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-start dark:bg-adminDark-bg-tertiary dark:shadow-none">
+            <div className="flex justify-between items-center w-full mb-3">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">New Registrations (Today)</h3>
+              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center dark:bg-yellow-900 dark:bg-opacity-30">
+                <UserPlusIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{loadingStats ? '...' : dashboardStats.newRegistrationsToday}</p>
+            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">New users registered today.</p>
+          </div>
+
+          {/* Kartu Tugas Tertunda */}
+          <div className="bg-white p-6 rounded-xl shadow-md flex flex-col items-start dark:bg-adminDark-bg-tertiary dark:shadow-none">
+            <div className="flex justify-between items-center w-full mb-3">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Pending Tasks</h3>
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center dark:bg-red-900 dark:bg-opacity-30">
+                <ClipboardDocumentListIcon className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{loadingStats ? '...' : dashboardStats.pendingTasks}</p>
+            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Admin tasks that need to be completed.</p>
+          </div>
+      </div>
+
+      {/* Bagian Aktivitas Terbaru - Styled with enhanced icons and layout */}
+      <div className="bg-white p-6 rounded-xl shadow-md mb-6 dark:bg-adminDark-bg-tertiary dark:shadow-none">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Recent Activity</h2>
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+          {recentActivities.length > 0 ? (
+              recentActivities.map((activity) => (
+                  <li key={activity.id} className="py-3 flex items-center space-x-3">
+                      <div className={`flex-shrink-0 ${activity.iconColor} p-2 rounded-full bg-gray-100 dark:bg-opacity-20`}> {/* Adjusted opacity */}
+                          <activity.icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex-grow flex justify-between items-center">
+                          <p className="text-gray-700 dark:text-gray-200">
+                              <span className="font-medium">{activity.type}:</span> {activity.description}
+                          </p>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">{activity.time}</span>
+                      </div>
+                  </li>
+              ))
+          ) : (
+              <li className="py-3 text-center text-gray-500 dark:text-gray-400">No recent activity.</li>
+          )}
+          </ul>
+      </div>
+
+      {/* Bagian Tautan Cepat & Ringkasan Sistem - Side by Side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow-md dark:bg-adminDark-bg-tertiary dark:shadow-none">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">Quick Links</h2>
+              <ul className="space-y-3">
+                  <li>
+                      <Link to="/admin/users" className="flex items-center text-purple-600 hover:text-purple-800 transition-colors duration-200 dark:text-adminDark-accent-green dark:hover:text-green-600">
+                          <UsersIcon className="h-5 w-5 mr-2" /> Manage Users
+                      </Link>
+                  </li>
+                  <li>
+                      <Link to="/admin/materials" className="flex items-center text-purple-600 hover:text-purple-800 transition-colors duration-200 dark:text-adminDark-accent-green dark:hover:text-green-600">
+                          <BookOpenIcon className="h-5 w-5 mr-2" /> Manage Materials
+                      </Link>
+                  </li>
+                  <li>
+                      <Link to="/admin/modules" className="flex items-center text-purple-600 hover:text-purple-800 transition-colors duration-200 dark:text-adminDark-accent-green dark:hover:text-green-600">
+                          <CubeIcon className="h-5 w-5 mr-2" /> Manage Modules
+                      </Link>
+                  </li>
+                  <li>
+                      <Link to="/admin/quizzes" className="flex items-center text-purple-600 hover:text-purple-800 transition-colors duration-200 dark:text-adminDark-accent-green dark:hover:text-green-600">
+                          <ClipboardDocumentListIcon className="h-5 w-5 mr-2" /> Manage Quizzes
+                      </Link>
+                  </li>
+              </ul>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-md dark:bg-adminDark-bg-tertiary dark:shadow-none">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 dark:text-white">System Summary</h2>
+              <div className="space-y-2 text-gray-700 text-sm dark:text-gray-300">
+                  <p><strong>App Version:</strong> 1.0.0</p>
+                  <p><strong>Server Status:</strong> <span className="text-green-600 font-medium dark:text-green-500">Online</span></p>
+                  <p><strong>Server Location:</strong> South Tangerang, Banten, Indonesia</p>
+                  <p><strong>Last Updated:</strong> {new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}</p>
+              </div>
+          </div>
+      </div>
     </div>
   );
 }
