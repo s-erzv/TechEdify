@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; 
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 import { motion, AnimatePresence } from 'framer-motion';
 
 
@@ -11,26 +11,26 @@ export default function Auth() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
-  const { signInWithPassword, signUp, signInWithOAuth, loading: authLoading, user } = useAuth();
+  // Pastikan Anda mendapatkan 'isReady' dari useAuth()
+  const { signInWithPassword, signUp, signInWithOAuth, loading: authLoading, user, isReady } = useAuth(); // MODIFIKASI DISINI: Tambahkan isReady
   const navigate = useNavigate();
 
     useEffect(() => {
-        console.log('Auth.jsx useEffect: authLoading:', authLoading, 'user:', user);
-        if (!authLoading && user && user.role) { 
-            const role = user.role; 
+        // MODIFIKASI DISINI: Tambahkan 'isReady' ke dalam kondisi IF
+        console.log('Auth.jsx useEffect: authLoading:', authLoading, 'user:', user, 'isReady:', isReady); // Tambahkan isReady ke log
+        if (!authLoading && user && user.role && isReady) { // KONDISI BARU: Hanya jalankan jika isReady juga TRUE
+            const role = user.role;
             console.log('Auth.jsx useEffect: User role for redirection:', role);
             if (role === 'admin') {
-                navigate('/admin/dashboard'); 
+                navigate('/admin/dashboard');
             } else if (role === 'student') {
-                navigate('/dashboard'); 
+                navigate('/dashboard');
             } else {
-                navigate('/dashboard'); 
+                // Fallback untuk role yang tidak diharapkan, atau jika 'student' juga default
+                navigate('/dashboard');
             }
         }
-    }, [authLoading, user, navigate]);
-
-    
-
+    }, [authLoading, user, navigate, isReady]); 
 
   const toggleMode = () => {
     setIsLogin((prev) => !prev);

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient'; 
+import { supabase } from '../lib/supabaseClient';
 
 const AuthContext = createContext(null);
 
@@ -9,39 +9,68 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [isReady, setIsReady] = useState(false);
 
-  const fetchAndSetUserProfile = async (supabaseUser) => {
-    console.log("🔍 fetchAndSetUserProfile CALLED with:", supabaseUser);
-    try {
-      const { data: profile, error: profileError } = await supabase
+const fetchAndSetUserProfile = async (supabaseUser) => {
+  console.log("🔍 fetchAndSetUserProfile CALLED with:", supabaseUser);
+  let userRole = 'student'; // Default role if profile fetch fails or not found
+
+  try {
+    // Coba ambil role dari app_metadata (lebih disukai)
+    // Supabase Auth biasanya menempatkan custom claims di app_metadata
+    if (supabaseUser.app_metadata && typeof supabaseUser.app_metadata.role === 'string') {
+      userRole = supabaseUser.app_metadata.role;
+      console.log("fetchAndSetUserProfile: Role from app_metadata:", userRole);
+    }
+    // Jika tidak ada di app_metadata, coba dari user_metadata (fallback)
+    else if (supabaseUser.user_metadata && typeof supabaseUser.user_metadata.role === 'string') {
+      userRole = supabaseUser.user_metadata.role;
+      console.log("fetchAndSetUserProfile: Role from user_metadata:", userRole);
+    }
+    // Jika role masih belum ditemukan di metadata, baru coba fetch dari profiles.
+    // Ini adalah titik potensial rekursi RLS.
+    else {
+      console.log("fetchAndSetUserProfile: Role not in metadata, fetching from profiles...");
+      // Add a timeout to this specific fetch as a safeguard
+      const profilePromise = supabase
         .from('profiles')
-        .select('*, role')
+        .select('id, role')
         .eq('id', supabaseUser.id)
         .single();
 
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('fetchAndSetUserProfile: Error:', profileError.message);
-        setUser({ ...supabaseUser, role: 'student' });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Profile role fetch timeout (from profiles table)')), 5000) // 5 seconds timeout
+      );
+
+      const { data: profile, error: profileError } = await Promise.race([
+        profilePromise,
+        timeoutPromise
+      ]);
+
+      if (profileError && profileError.code !== 'PGRST116') { // PGRST116 is "no rows found"
+        console.error('fetchAndSetUserProfile: Error fetching role from profiles table (likely RLS recursion or other DB error):', profileError.message);
+        // Default to student on error
       } else if (profile) {
-        console.log('fetchAndSetUserProfile: Success:', profile);
-        const userWithRole = { ...supabaseUser, role: profile.role };
-        console.log('fetchAndSetUserProfile: Setting user with role:', userWithRole);
-        setUser(userWithRole);
+        userRole = profile.role;
+        console.log('fetchAndSetUserProfile: Role from profiles table (fallback):', userRole);
       } else {
-        console.warn('fetchAndSetUserProfile: No profile found. Using default role "student".');
-        setUser({ ...supabaseUser, role: 'student' });
+        console.warn('fetchAndSetUserProfile: No role found in profiles table for user. Using default "student".');
       }
-    } catch (err) {
-      console.error('fetchAndSetUserProfile: Unexpected error:', err.message);
-      setUser({ ...supabaseUser, role: 'student' });
-    } finally {
-      setIsReady(true);
     }
-  };
+
+  } catch (err) {
+    console.error('fetchAndSetUserProfile: UNEXPECTED ERROR during role determination:', err.message);
+  } finally {
+    const finalUser = { ...supabaseUser, role: userRole };
+    console.log('fetchAndSetUserProfile: Setting final user object:', finalUser);
+    setUser(finalUser);
+    setIsReady(true);
+  }
+};
 
   const signInWithOAuth = async (provider) => {
     try {
       console.log('signInWithOAuth: Signing in with provider:', provider);
-      const { error } = await supabase.auth.signInWithOAuth({ provider });
+      // Anda mungkin perlu menambahkan redirectTo jika provider tidak auto-redirect
+      const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin } });
       if (error) throw error;
     } catch (err) {
       console.error('signInWithOAuth error:', err.message);
@@ -66,7 +95,7 @@ export const AuthProvider = ({ children }) => {
         const sessionUser = data.session?.user;
 
         if (sessionUser) {
-          console.log('getInitialSession: User found, fetching profile...');
+          console.log('getInitialSession: User found, fetching profile (AuthContext)...');
           await fetchAndSetUserProfile(sessionUser);
         } else {
           console.log('getInitialSession: No user found in session');
@@ -105,95 +134,21 @@ export const AuthProvider = ({ children }) => {
           setIsReady(false);
           setLoading(false);
         } else if (event === 'SIGNED_IN' && currentSession?.user) {
-          console.log('🔥 SIGNED_IN event - starting profile fetch');
-          // Set isReady to false while processing
-          setIsReady(false);
-          setLoading(false);
-          
+          console.log('🔥 SIGNED_IN event - starting profile fetch (AuthContext)');
+
           const fetchedUser = currentSession.user;
-          console.log('🔥 Fetched user:', fetchedUser);
-          
-          const metadata = fetchedUser.user_metadata || {};
-          const currentFirstName = metadata.first_name || '';
-          const currentLastName = metadata.last_name || '';
-          const currentUsername = metadata.username || '';
-          const currentAvatarUrl = metadata.avatar_url || '/default-avatar.png';
 
-          const generateUniqueUsername = (first, last) => {
-            const baseFirst = first ? String(first).toLowerCase() : 'user';
-            const baseLast = last ? String(last).toLowerCase() : '';
-            const random = Math.floor(Math.random() * 10000);
-            return `${baseFirst}${baseLast}${random}`;
-          };
+          // Kita TIDAK akan lagi membuat profil di sini secara manual.
+          // Ini adalah tanggung jawab trigger handle_new_user di backend.
+          // Cukup fetch dan set user profile.
+          await fetchAndSetUserProfile(fetchedUser);
 
-          try {
-            console.log('🔥 Fetching profile for user ID:', fetchedUser.id);
-            
-            // Add timeout to prevent hanging
-            const profilePromise = supabase
-              .from('profiles')
-              .select('*, role')
-              .eq('id', fetchedUser.id)
-              .single();
-
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
-            );
-
-            const { data: existingProfile, error: fetchError } = await Promise.race([
-              profilePromise,
-              timeoutPromise
-            ]);
-
-            console.log('🔥 Profile fetch result:', { existingProfile, fetchError });
-
-            let userRole = 'student';
-
-            if (fetchError && fetchError.code === 'PGRST116') {
-              console.log('🔥 SIGNED_IN: Profile does not exist, creating new profile.');
-              const usernameToUse =
-                currentUsername || generateUniqueUsername(currentFirstName, currentLastName);
-
-              const newProfileData = {
-                id: fetchedUser.id,
-                email: fetchedUser.email,
-                first_name: currentFirstName,
-                last_name: currentLastName,
-                full_name: `${currentFirstName} ${currentLastName}`.trim(),
-                username: usernameToUse,
-                avatar_url: currentAvatarUrl,
-                role: 'student',
-              };
-
-              const { error: insertError } = await supabase
-                .from('profiles')
-                .insert([newProfileData]);
-
-              if (insertError) {
-                console.error('🔥 SIGNED_IN: Error creating profile:', insertError.message);
-              } else {
-                console.log('🔥 SIGNED_IN: Profile created successfully:', newProfileData);
-              }
-              userRole = 'student';
-            } else if (existingProfile) {
-              console.log('🔥 SIGNED_IN: Profile already exists:', existingProfile);
-              userRole = existingProfile.role;
-            } else {
-              console.error('🔥 SIGNED_IN: Unexpected error during profile fetch:', fetchError?.message || 'Unknown error');
-            }
-
-            const finalUser = { ...fetchedUser, role: userRole };
-            console.log('🔥 SIGNED_IN: Final user object after role merge:', finalUser);
-            setUser(finalUser);
-            setIsReady(true);
-          } catch (err) {
-            console.error('🔥 SIGNED_IN: Profile creation/update error:', err.message);
-            const fallbackUser = { ...fetchedUser, role: 'student' };
-            console.log('🔥 SIGNED_IN: Setting fallback user:', fallbackUser);
-            setUser(fallbackUser);
-            setIsReady(true);
-          }
-        } else {
+        } else if (event === 'USER_UPDATED') {
+          // Jika user metadata di auth.users diupdate, panggil lagi fetchAndSetUserProfile
+          console.log('🔥 USER_UPDATED event - refetching profile (AuthContext)');
+          await fetchAndSetUserProfile(currentSession.user);
+        }
+        else {
           // Handle other events
           setLoading(false);
           if (!currentSession?.user) {
@@ -216,13 +171,14 @@ export const AuthProvider = ({ children }) => {
     isReady,
     signInWithPassword: async ({ email, password }) => {
       const result = await supabase.auth.signInWithPassword({ email, password });
+      // Setelah signInWithPassword, onAuthStateChange akan terpicu dan memanggil fetchAndSetUserProfile
       return result;
     },
     signUp: async (credentials) => {
-      if (!credentials.options?.data) {
-        return { error: new Error("'options.data' is missing for signUp.") };
-      }
+      // Pastikan data yang dikirim ke signUp mencakup user_metadata yang diperlukan
+      // agar trigger handle_new_user memiliki data first_name/last_name untuk username
       const result = await supabase.auth.signUp(credentials);
+      // onAuthStateChange akan terpicu setelah signup dan memanggil fetchAndSetUserProfile
       return result;
     },
     signInWithOAuth,
