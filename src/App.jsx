@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Auth from './pages/Auth';
-import Dashboard from './pages/Dashboard'; 
+import Dashboard from './pages/Dashboard';
 import { AdminGuard } from './components/AdminGuard';
 import AuthGuard from './components/AuthGuard';
 import AdminLayout from './components/AdminLayout';
@@ -16,102 +16,41 @@ import Courses from './pages/admin/Courses'
 import MaterialsPage from './pages/Material';
 import CourseDetailsPage from './pages/CourseDetailsPage';
 import LessonViewerPage from './pages/LessonViewerPage';
-import QuizPage from './pages/QuizPage'; 
+import QuizPage from './pages/QuizPage';
 import QuizListPage from './pages/QuizListPage';
-import LeaderboardPage from './pages/LeaderboardPage'; 
-import DiscussionListPage from './pages/DiscussionListPage'; 
+import LeaderboardPage from './pages/LeaderboardPage';
+import DiscussionListPage from './pages/DiscussionListPage';
 import DiscussionDetailPage from './pages/DiscussionDetailPage';
-import CreateDiscussionPage from './pages/CreateDiscussionPage'; 
-import HistoryPage from './pages/HistoryPage'; 
+import CreateDiscussionPage from './pages/CreateDiscussionPage';
+import HistoryPage from './pages/HistoryPage';
 import BookmarkPage from './pages/BookmarkPage';
-import SettingsPage from './pages/SettingsPage'; 
+import SettingsPage from './pages/SettingsPage';
 
 import { AuthProvider } from './context/AuthContext';
+import MainLayout from './components/mainLayout'; 
 
 function App() {
   return (
-    <AuthProvider> 
+    <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/Auth" element={<Auth />} />
 
-          <Route path="/Dashboard" element={
-            <AuthGuard>
-              <Dashboard />
-            </AuthGuard>
-          } />
-
-          <Route path="/material" element={
-            <AuthGuard>
-              <MaterialsPage />
-            </AuthGuard>
-          } />
-
-          <Route path="/course/:courseId" element={
-            <AuthGuard>
-              <CourseDetailsPage />
-            </AuthGuard>
-          } />
-
-          <Route path="/course/:courseId/lesson/:lessonId" element={
-            <AuthGuard>
-              <LessonViewerPage />
-            </AuthGuard>
-          } />
-
-          <Route path="/quiz/:quizId" element={
-            <AuthGuard>
-              <QuizPage />
-            </AuthGuard>
-          } />
-
-          <Route path="/quizzes" element={
-            <AuthGuard>
-              <QuizListPage />
-            </AuthGuard>
-          } />
-
-          <Route path="/leaderboard" element={
-            <AuthGuard>
-              <LeaderboardPage /> 
-            </AuthGuard>
-          } />
-
-           {/* Rute baru untuk Diskusi */}
-          <Route path="/discussions" element={
-            <AuthGuard>
-              <DiscussionListPage /> 
-            </AuthGuard>
-          } />
-          <Route path="/discussions/:discussionId" element={
-            <AuthGuard>
-              <DiscussionDetailPage /> 
-            </AuthGuard>
-          } />
-
-          <Route path="/discussions/new" element={
-            <AuthGuard>
-              <CreateDiscussionPage /> 
-            </AuthGuard>
-          } />
-
-          <Route path="/history" element={
-            <AuthGuard>
-              <HistoryPage /> 
-            </AuthGuard>
-          } />
-
-          <Route path="/bookmarks" element={
-            <AuthGuard>
-              <BookmarkPage /> 
-            </AuthGuard>
-          } />
-
-          <Route path="/settings" element={
-            <AuthGuard>
-              <SettingsPage /> 
-            </AuthGuard>
-          } />
+          <Route element={<AuthGuard><MainLayout /></AuthGuard>}> 
+            <Route path="/Dashboard" element={<Dashboard />} />
+            <Route path="/material" element={<MaterialsPage />} />
+            <Route path="/course/:courseId" element={<CourseDetailsPage />} />
+            <Route path="/course/:courseId/lesson/:lessonId" element={<LessonViewerPage />} />
+            <Route path="/quiz/:quizId" element={<QuizPage />} />
+            <Route path="/quizzes" element={<QuizListPage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/discussions" element={<DiscussionListPage />} />
+            <Route path="/discussions/:discussionId" element={<DiscussionDetailPage />} />
+            <Route path="/discussions/new" element={<CreateDiscussionPage />} />
+            <Route path="/history" element={<HistoryPage />} />
+            <Route path="/bookmarks" element={<BookmarkPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
 
           <Route path="/admin" element={
             <AdminGuard>
