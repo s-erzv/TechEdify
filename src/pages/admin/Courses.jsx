@@ -388,17 +388,22 @@ export default function AdminManageCourses() {
 
             if (error) throw error;
 
-            // Sortir modules dan lessons di dalam data
-            const sortedModules = data.modules.sort((a, b) => a.order_in_course - b.order_in_course);
-            const sortedModulesWithLessons = sortedModules.map(module => ({
-                ...module,
-                lessons: module.lessons ? module.lessons.sort((a, b) => a.order_in_module - b.order_in_module) : [],
-                // Pastikan lesson_materials di setiap pelajaran juga diurutkan
-                lessons: module.lessons.map(lesson => ({
+             const sortedModules = data.modules ? data.modules.sort((a, b) => a.order_in_course - b.order_in_course) : [];
+            const modulesWithSortedLessonsAndMaterials = sortedModules.map(module => {
+                // Urutkan pelajaran dalam modul terlebih dahulu
+                const sortedLessons = module.lessons ? module.lessons.sort((a, b) => a.order_in_module - b.order_in_module) : [];
+                
+                // Kemudian, untuk setiap pelajaran yang sudah diurutkan, urutkan lesson_materials-nya
+                const lessonsWithSortedMaterials = sortedLessons.map(lesson => ({
                     ...lesson,
                     lesson_materials: lesson.lesson_materials ? lesson.lesson_materials.sort((a, b) => a.order_in_lesson - b.order_in_lesson) : []
-                }))
-            }));
+                }));
+
+                return {
+                    ...module,
+                    lessons: lessonsWithSortedMaterials // Tetapkan kunci 'lessons' hanya sekali
+                };
+            });
 
 
             setCourseToView({ ...data, modules: sortedModulesWithLessons });
