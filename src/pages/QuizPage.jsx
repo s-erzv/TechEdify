@@ -49,6 +49,7 @@ export default function QuizPage() {
                         title,
                         description,
                         pass_score,
+                        image_url, 
                         quiz_questions ( 
                             id,
                             question_text,
@@ -56,7 +57,9 @@ export default function QuizPage() {
                             order_in_quiz,
                             options,
                             correct_answer_index,
-                            correct_answer_text
+                            correct_answer_text,
+                            image_url, 
+                            hint
                         )
                     `)
                     .eq('id', quizId)
@@ -70,37 +73,43 @@ export default function QuizPage() {
                 const sortedQuestions = questionsRaw
                     .map(qq => {
                         let parsedOptions = [];
-                        try {
-                            const rawOptions = qq.options;
-                            const tempOptions = JSON.parse(rawOptions); 
+                        // Logika parsing opsi yang sudah ada untuk tipe pertanyaan lain (misal: multiple_choice)
+                        if (qq.question_type === 'short_answer') {
+                            parsedOptions = []; // Short answer questions don't have selectable options
+                        } else {
+                            try {
+                                const rawOptions = qq.options;
+                                const tempOptions = JSON.parse(rawOptions); 
 
-                            if (Array.isArray(tempOptions)) {
-                                if (tempOptions.every(item => typeof item === 'string')) {
-                                    parsedOptions = tempOptions.map((text, idx) => ({
-                                        id: `${qq.id}-option-${idx}`, 
-                                        option_text: text,
-                                        is_correct: (idx === qq.correct_answer_index) 
-                                    }));
+                                if (Array.isArray(tempOptions)) {
+                                    if (tempOptions.every(item => typeof item === 'string')) {
+                                        parsedOptions = tempOptions.map((text, idx) => ({
+                                            id: `${qq.id}-option-${idx}`, 
+                                            option_text: text,
+                                            is_correct: (idx === qq.correct_answer_index) 
+                                        }));
+                                    } 
+                                    else if (tempOptions.every(item => typeof item === 'object' && item !== null && 'option_text' in item)) {
+                                        parsedOptions = tempOptions.map(opt => ({
+                                            id: opt.id || `${qq.id}-option-${Math.random().toString(36).substring(2, 9)}`, 
+                                            option_text: opt.option_text,
+                                            is_correct: opt.is_correct || false
+                                        }));
+                                    } 
+                                    else {
+                                        console.warn("Unexpected options array content for question:", qq.id, rawOptions);
+                                        parsedOptions = [{ id: 'error_opt', option_text: rawOptions || 'Error parsing options', is_correct: false }];
+                                    }
                                 } 
-                                else if (tempOptions.every(item => typeof item === 'object' && item !== null && 'option_text' in item)) {
-                                    parsedOptions = tempOptions.map(opt => ({
-                                        id: opt.id || `${qq.id}-option-${Math.random().toString(36).substring(2, 9)}`, 
-                                        option_text: opt.option_text,
-                                        is_correct: opt.is_correct || false
-                                    }));
-                                } else {
-                                    console.warn("Unexpected options array content for question:", qq.id, rawOptions);
+                                else {
+                                    console.warn("Options is not an array after JSON.parse for question:", qq.id, rawOptions);
                                     parsedOptions = [{ id: 'error_opt', option_text: rawOptions || 'Error parsing options', is_correct: false }];
                                 }
-                            } else {
-                                console.warn("Options is not an array after JSON.parse for question:", qq.id, rawOptions);
-                                parsedOptions = [{ id: 'error_opt', option_text: rawOptions || 'Error parsing options', is_correct: false }];
+                            } catch (parseErr) {
+                                console.error("Failed to parse options JSON for question:", qq.id, parseErr, "Raw options:", qq.options);
+                                parsedOptions = [{ id: 'error_opt', option_text: qq.options || 'Error parsing options', is_correct: false }];
                             }
-                        } catch (parseErr) {
-                            console.error("Failed to parse options JSON for question:", qq.id, parseErr, "Raw options:", qq.options);
-                            parsedOptions = [{ id: 'error_opt', option_text: qq.options || 'Error parsing options', is_correct: false }];
                         }
-
                         return {
                             id: qq.id, 
                             question_text: qq.question_text,
@@ -108,7 +117,9 @@ export default function QuizPage() {
                             order_in_quiz: qq.order_in_quiz,
                             options: parsedOptions, 
                             correct_answer_index: qq.correct_answer_index, 
-                            correct_answer_text: qq.correct_answer_text 
+                            correct_answer_text: qq.correct_answer_text,
+                            image_url: qq.image_url, // Pastikan ini juga disalin ke objek pertanyaan
+                            hint: qq.hint, // Pastikan ini juga disalin ke objek pertanyaan
                         };
                     })
                     .sort((a, b) => a.order_in_quiz - b.order_in_quiz);
@@ -131,20 +142,22 @@ export default function QuizPage() {
     }, [quizId]);
 
     const handleOptionSelect = (questionId, optionId) => {
-        setUserAnswers(prev => ({
-            ...prev,
-            [questionId]: optionId
-        }));
+            console.log(`Question ID: ${questionId}, Captured Answer: ${optionId}`); // <<< TAMBAHKAN BARIS INI
+            setUserAnswers(prev => ({
+                ...prev,
+                [questionId]: optionId
+            }));
     };
 
     const handleNextQuestion = () => {
-        if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
-        } else {
-            calculateScore();
-            setQuizCompleted(true);
-        }
-    };
+        if (currentQuestionIndex < questions.length - 1) {
+            setCurrentQuestionIndex(prev => prev + 1);
+        } else {
+            console.log("Final user answers before calculating score:", userAnswers); // <<< TAMBAHKAN BARIS INI
+            calculateScore();
+            setQuizCompleted(true);
+        }
+    };
 
     const calculateScore = async () => {
         let correctCount = 0;
@@ -161,15 +174,28 @@ export default function QuizPage() {
                 isCurrentAnswerCorrect = (userAnswerId === correctAnswerOption.id);
                 actualCorrectAnswerText = correctAnswerOption.option_text;
             } else {
-                if (question.question_type === 'multiple_choice' && question.correct_answer_index !== undefined && question.options[question.correct_answer_index]) {
-                    const selectedOption = question.options.find(opt => opt.id === userAnswerId);
-                    isCurrentAnswerCorrect = (selectedOption?.option_text === question.options[question.correct_answer_index].option_text);
-                    actualCorrectAnswerText = question.options[question.correct_answer_index].option_text;
-                } else if (question.correct_answer_text) {
-                    const selectedOption = question.options.find(opt => opt.id === userAnswerId);
-                    isCurrentAnswerCorrect = (selectedOption?.option_text === question.correct_answer_text);
+                 if (question.question_type === 'multiple_choice' || question.question_type === 'true_false') {
+                // Untuk pilihan ganda/true_false, cari opsi yang benar berdasarkan is_correct atau index
+                const correctAnswerOption = question.options.find(opt => opt.is_correct) || 
+                    (question.correct_answer_index !== null && question.options[question.correct_answer_index]);
+
+                if (correctAnswerOption) {
+                    isCurrentAnswerCorrect = (userAnswerId === correctAnswerOption.id);
+                    actualCorrectAnswerText = correctAnswerOption.option_text;
+                }
+            } else if (question.question_type === 'short_answer') {
+                // Untuk jawaban singkat, bandingkan teks jawaban pengguna dengan correct_answer_text
+                if (question.correct_answer_text) {
+                    // Perbandingan case-insensitive
+                    isCurrentAnswerCorrect = (userAnswers[question.id]?.toLowerCase() === question.correct_answer_text.toLowerCase());
                     actualCorrectAnswerText = question.correct_answer_text;
                 }
+            } else if (question.question_type === 'essay') {
+                // Pertanyaan esai biasanya dinilai secara manual.
+                // Secara otomatis, ini akan dinilai salah kecuali ada logika penilaian manual di sini.
+                isCurrentAnswerCorrect = false; 
+                actualCorrectAnswerText = question.correct_answer_text || "Penilaian manual diperlukan";
+            }
             }
             
             if (isCurrentAnswerCorrect) {
@@ -177,8 +203,8 @@ export default function QuizPage() {
                 newFeedback[question.id] = { isCorrect: true };
             } else {
                 newFeedback[question.id] = { 
-                    isCorrect: false, 
-                    correctAnswer: actualCorrectAnswerText
+                    isCorrect: false,
+                    hint: question.hint // Pastikan hint ada di sini
                 };
             }
         });
@@ -254,15 +280,20 @@ export default function QuizPage() {
     return (
         <MainLayout>
             <div className="flex-grow p-6 bg-[#F9F9FB] rounded-xl min-h-[calc(100vh-80px)] dark:bg-dark-bg-secondary">
-                <header className="mb-6 p-4 bg-white rounded-xl shadow-sm flex items-center justify-between dark:bg-dark-bg-tertiary">
-                    <div className="flex items-center">
+                <header className="mb-6 p-4 bg-white rounded-xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between dark:bg-dark-bg-tertiary">
+                    <div className="flex items-center mb-4 md:mb-0">
                         <button onClick={handleGoBack} className="mr-4 text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                             <ArrowLeftIcon className="h-6 w-6" />
                         </button>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{quizDetails.title}</h1>
                     </div>
+                    {quizDetails.image_url && ( // <<< BLOK BARU UNTUK GAMBAR THUMBNAIL KUIS
+                        <div className="md:ml-auto mb-4 md:mb-0">
+                            <img src={quizDetails.image_url} alt={`${quizDetails.title} Thumbnail`} className="h-10 w-auto object-cover rounded-full" />
+                        </div>
+                    )}
                     {quizDetails.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{quizDetails.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 md:ml-4">{quizDetails.description}</p>
                     )}
                 </header>
 
@@ -285,23 +316,43 @@ export default function QuizPage() {
                                 <h3 className="text-xl font-semibold mb-6 text-gray-800 dark:text-white">
                                     {currentQuestion.question_text}
                                 </h3>
-                               <div className="space-y-4">
-                                    {currentQuestion.options && currentQuestion.options.length > 0 ? (
-                                        currentQuestion.options.map((option, index) => ( 
-                                            <button
-                                                key={option.id} 
-                                                onClick={() => handleOptionSelect(currentQuestion.id, option.id)}
-                                                className={`w-full text-left p-4 rounded-lg border-2 transition-colors duration-200
-                                                    ${userAnswers[currentQuestion.id] === option.id
-                                                        ? 'border-purple-600 bg-purple-50 text-purple-800 dark:border-dark-accent-purple dark:bg-dark-accent-purple dark:bg-opacity-20 dark:text-dark-accent-purple'
-                                                        : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100'
-                                                    }`}
-                                            >
-                                                {option.option_text} 
-                                            </button>
-                                        ))
+                                {currentQuestion.image_url && ( // <<< BLOK BARU UNTUK GAMBAR PERTANYAAN
+                                    <div className="mb-6">
+                                        <img src={currentQuestion.image_url} alt="Question Image" className="max-w-full h-auto rounded-lg shadow-md dark:shadow-none mx-auto" />
+                                    </div>
+                                )}
+                                <div className="space-y-4">
+                                    {currentQuestion.question_type === 'multiple_choice' || currentQuestion.question_type === 'true_false' ? (
+                                        // Render opsi sebagai tombol untuk multiple_choice atau true_false
+                                        currentQuestion.options && currentQuestion.options.length > 0 ? (
+                                            currentQuestion.options.map((option, index) => (
+                                                <button
+                                                    key={option.id}
+                                                    onClick={() => handleOptionSelect(currentQuestion.id, option.id)}
+                                                    className={`w-full text-left p-4 rounded-lg border-2 transition-colors duration-200
+                                                        ${userAnswers[currentQuestion.id] === option.id
+                                                            ? 'border-purple-600 bg-purple-50 text-purple-800 dark:border-dark-accent-purple dark:bg-dark-accent-purple dark:bg-opacity-20 dark:text-dark-accent-purple'
+                                                            : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100'
+                                                        }`}
+                                                >
+                                                    {option.option_text}
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <p className="text-red-500 dark:text-red-400">Opsi tidak tersedia untuk pertanyaan ini.</p>
+                                        )
+                                    ) : currentQuestion.question_type === 'short_answer' ? (
+                                        // Render input teks untuk short_answer
+                                        <input
+                                            type="text"
+                                            className="w-full p-4 rounded-lg border-2 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                                            placeholder="Ketik jawaban Anda di sini..."
+                                            value={userAnswers[currentQuestion.id] || ''}
+                                            onChange={(e) => handleOptionSelect(currentQuestion.id, e.target.value)}
+                                        />
                                     ) : (
-                                        <p className="text-red-500 dark:text-red-400">Opsi tidak tersedia untuk pertanyaan ini.</p>
+                                        // Fallback jika tipe pertanyaan tidak dikenal
+                                        <p className="text-red-500 dark:text-red-400">Tipe pertanyaan tidak didukung.</p>
                                     )}
                                 </div>
                                 <div className="mt-8 flex justify-end">
@@ -342,9 +393,17 @@ export default function QuizPage() {
                                                         {index + 1}. {question.question_text}
                                                     </p>
                                                 </div>
-                                                <p className="text-gray-700 mb-2 ml-8 dark:text-gray-300">Your Answer: {question.options.find(opt => opt.id === userAnswers[question.id])?.option_text || 'Not answered'}</p>
-                                                {!feedback[question.id]?.isCorrect && feedback[question.id]?.correctAnswer && (
-                                                    <p className="text-green-600 ml-8 dark:text-green-500">Correct Answer: {feedback[question.id]?.correctAnswer}</p>
+                                                <p className="text-gray-700 mb-2 ml-8 dark:text-gray-300">
+                                                    Your Answer: {
+                                                        currentQuestion.question_type === 'short_answer' || currentQuestion.question_type === 'essay' ?
+                                                        (userAnswers[currentQuestion.id] || 'Tidak dijawab') : // Tampilkan teks langsung
+                                                        (question.options.find(opt => opt.id === userAnswers[currentQuestion.id])?.option_text || 'Tidak dijawab') // Untuk pilihan ganda
+                                                    }
+                                                </p>
+                                                
+                                                {/* Konten Hint */}
+                                                {!feedback[question.id]?.isCorrect && feedback[question.id]?.hint && (
+                                                    <p className="text-blue-600 ml-8 dark:text-blue-400">Petunjuk: {feedback[question.id]?.hint}</p>
                                                 )}
                                             </div>
                                         ))}

@@ -14,7 +14,7 @@ import {
 
 export default function Sidebar() {
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(location.pathname.includes('/course/') && location.pathname.includes('/lesson/'));
   const [currentTheme, setCurrentTheme] = useState('light');
 
   useEffect(() => {

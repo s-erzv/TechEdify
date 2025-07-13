@@ -358,8 +358,8 @@ export default function LessonViewerPage() {
         const { content_type, content_url, content_text, title } = material.materials;
 
         const youtubeEmbedUrl = content_url && getYouTubeVideoId(content_url) 
-                                ? `http://googleusercontent.com/youtube.com/embed/${getYouTubeVideoId(content_url)}` 
-                                : null; // Perbaikan URL YouTube embed
+                                ? `https://www.youtube.com/embed/${getYouTubeVideoId(content_url)}`
+                                : null; 
 
         switch (content_type) {
             case 'video_url':
@@ -388,9 +388,25 @@ export default function LessonViewerPage() {
                 );
             case 'script':
                 return (
-                    <pre className="bg-gray-800 text-white p-4 rounded-lg overflow-x-auto text-sm">
-                        <code>{content_text}</code>
-                    </pre>
+                    <div className="relative"> {/* Tambahkan div relative untuk positioning tombol */}
+                        <pre className="bg-gray-800 text-white p-4 rounded-lg overflow-x-auto text-sm">
+                            <code>{content_text}</code>
+                        </pre>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(content_text)
+                                    .then(() => alert('Skrip berhasil disalin!')) // Feedback sederhana
+                                    .catch(err => console.error('Gagal menyalin teks: ', err));
+                            }}
+                            className="absolute top-2 right-2 p-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
+                            title="Salin ke clipboard"
+                        >
+                            {/* Ikon Salin (Anda bisa ganti dengan ikon Heroicons jika tersedia) */}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75m1.5 0h8.25c.621 0 1.125.504 1.125 1.125v10.375m-4.5 0h1.5m-1.5 0a.75.75 0 0 0 .75.75h.75a.75.75 0 0 0 .75-.75m-1.5 0V7.5" />
+                            </svg>
+                        </button>
+                    </div>
                 );
             case 'image':
                 return <img src={content_url} alt={title || "Material image"} className="max-w-full h-auto rounded-lg shadow-md dark:shadow-none" />;

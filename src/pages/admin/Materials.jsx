@@ -859,7 +859,7 @@ export default function AdminManageMaterials() {
                                     {(materialToView.content_url.includes('youtube.com') || materialToView.content_url.includes('youtu.be')) ? (
                                         <iframe
                                             className="absolute top-0 left-0 w-full h-full rounded-lg"
-                                            src={`https://www.youtube.com/embed/${getYouTubeVideoId(materialToView.content_url)}`}
+                                            src={`https://www.youtube.com/embed/{getYouTubeVideoId(materialToView.content_url)}`}
                                             title="YouTube video player"
                                             frameBorder="0"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

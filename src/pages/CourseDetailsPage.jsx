@@ -92,7 +92,8 @@ export default function CourseDetailsPage() {
                     .select('id')
                     .eq('user_id', user.id)
                     .eq('course_id', courseId)
-                    .single();
+                    //.single();
+                    .limit(1);
                 
                 if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found (not an error for .single())
                     throw error;
@@ -266,8 +267,8 @@ export default function CourseDetailsPage() {
                                                     <div className="mt-3 ml-2 border-l pl-3 dark:border-gray-600">
                                                         <h4 className="text-lg font-semibold text-gray-700 mb-2 dark:text-gray-200">Lessons in this Module:</h4>
                                                         <ul className="space-y-3">
-                                                            {module.lessons.map(lesson => (
-                                                                <li key={lesson.id} className="bg-white p-3 rounded-md shadow-sm dark:bg-[#4A4A5A] dark:shadow-none"> {/* Lesson background */}
+                                                            {module.lessons.map((lesson, index) => (
+                                                                <li key={lesson.id || index} className="bg-white p-3 rounded-md shadow-sm dark:bg-[#4A4A5A] dark:shadow-none"> {/* Lesson background */}
                                                                     <Link
                                                                         to={`/course/${courseId}/lesson/${lesson.id}`}
                                                                         className="block font-medium text-gray-800 hover:text-purple-700 transition-colors dark:text-white dark:hover:text-dark-accent-purple"
@@ -284,8 +285,8 @@ export default function CourseDetailsPage() {
                                                                         <div className="mt-2 text-xs">
                                                                             <h5 className="font-semibold text-gray-700 mb-1 dark:text-gray-200">Materials in this Lesson:</h5>
                                                                             <ul className="space-y-1">
-                                                                                {lesson.lesson_materials.map(lm => (
-                                                                                    <li key={lm.material_id}>
+                                                                                {lesson.lesson_materials.map((lm, index) => (
+                                                                                    <li key={lm.material_id || index }>
                                                                                         {lm.materials ? (
                                                                                             <div className="flex items-center space-x-1">
                                                                                                 {lm.materials.content_type === 'image' && <PhotoIcon className="h-4 w-4 text-green-500 dark:text-green-400" />}

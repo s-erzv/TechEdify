@@ -65,7 +65,7 @@ export default function AdminManageQuizzes() {
         type: 'standard', // 'standard', 'practice', 'exam'
         max_attempts: 1,
         pass_score: 70,
-        quizFile: null, // Untuk menyimpan objek file gambar thumbnail kuis
+        quizFile: null,
     });
 
     // --- State untuk manajemen Pertanyaan dalam Quiz ---
@@ -79,7 +79,8 @@ export default function AdminManageQuizzes() {
         correct_answer_index: 0, // For multiple choice
         correct_answer_text: '', // For short answer
         score_value: 10,
-        questionFile: null // Untuk menyimpan objek file gambar pertanyaan
+        questionFile: null, // Untuk menyimpan objek file gambar pertanyaan
+        hint: '', // Pastikan ini ada di inisialisasi newQuestionData
     });
     const [editingQuestionIndex, setEditingQuestionIndex] = useState(null); // Index of question being edited
 
@@ -417,7 +418,8 @@ export default function AdminManageQuizzes() {
             correct_answer_index: 0,
             correct_answer_text: '',
             score_value: 10,
-            questionFile: null 
+            questionFile: null,
+            hint: '', // <<< Ini sudah ada, bagus!
         });
         setEditingQuestionIndex(null);
     };
@@ -502,6 +504,7 @@ export default function AdminManageQuizzes() {
                 options: newQuestionData.question_type === 'multiple_choice' ? JSON.stringify(newQuestionData.options) : null,
                 correct_answer_index: newQuestionData.question_type === 'multiple_choice' ? newQuestionData.correct_answer_index : null,
                 correct_answer_text: newQuestionData.question_type === 'short_answer' || newQuestionData.question_type === 'essay' ? newQuestionData.correct_answer_text : null,
+                hint: newQuestionData.hint,
             };
 
             if (editingQuestionIndex !== null) { // Update existing question
@@ -535,7 +538,8 @@ export default function AdminManageQuizzes() {
                 correct_answer_index: 0,
                 correct_answer_text: '',
                 score_value: 10,
-                questionFile: null 
+                questionFile: null,
+                hint: ''
             });
             setEditingQuestionIndex(null);
             fetchQuizQuestions(quizToManageQuestions.id); // Refresh daftar pertanyaan
@@ -556,7 +560,8 @@ export default function AdminManageQuizzes() {
             correct_answer_text: question.question_type === 'short_answer' || question.question_type === 'essay' ? (question.correct_answer_text || '') : '',
             score_value: question.score_value,
             image_url: question.image_url || '', 
-            questionFile: null 
+            questionFile: null,
+            hint: question.hint || '',
         });
         setEditingQuestionIndex(index);
     };
@@ -1004,7 +1009,7 @@ export default function AdminManageQuizzes() {
             {/* --- Modal Manajemen Pertanyaan (Manage Questions) --- */}
             {showManageQuestionsModal && quizToManageQuestions && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl relative max-h-[90vh] overflow-y-auto dark:bg-adminDark-bg-tertiary dark:text-white">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl relative max-h-[95vh] overflow-y-auto dark:bg-adminDark-bg-tertiary dark:text-white">
                         <button onClick={closeManageQuestionsModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
@@ -1123,6 +1128,19 @@ export default function AdminManageQuizzes() {
                                         required
                                     />
                                 </div>
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300" htmlFor="hint">Hint (Optional)</label>
+                                    <textarea
+                                        id="hint"
+                                        name="hint"
+                                        rows="2"
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        value={newQuestionData.hint}
+                                        onChange={handleQuestionInputChange}
+                                        placeholder="Berikan petunjuk untuk pertanyaan ini (opsional)"
+                                    ></textarea>
+                                    <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">Petunjuk ini akan ditampilkan kepada pengguna jika jawaban mereka salah.</p>
+                                </div>
                                 <div className="mb-6">
                                     <label className="block text-gray-700 text-sm font-bold mb-1 dark:text-gray-300" htmlFor="question_file">Question Image (Optional)</label>
                                     {newQuestionData.image_url && ( // Tampilkan gambar yang ada saat edit
@@ -1160,7 +1178,8 @@ export default function AdminManageQuizzes() {
                                                     correct_answer_index: 0,
                                                     correct_answer_text: '',
                                                     score_value: 10,
-                                                    questionFile: null 
+                                                    questionFile: null,
+                                                    hint: '', // Pastikan ini juga direset di sini
                                                 });
                                             }}
                                             className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"

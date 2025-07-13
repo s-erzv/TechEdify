@@ -867,7 +867,7 @@ export default function AdminManageCourses() {
                 {/* --- Modal View Detail Kursus (BARU) --- */}
                 {showViewModal && courseToView && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 dark:bg-opacity-75">
-                        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl relative max-h-[90vh] overflow-y-auto dark:bg-adminDark-bg-tertiary dark:text-white">
+                        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl relative max-h-[95vh] overflow-y-auto dark:bg-adminDark-bg-tertiary dark:text-white">
                             <button onClick={closeViewModal} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                                 <XMarkIcon className="h-6 w-6" />
                             </button>
