@@ -227,11 +227,18 @@ export default function CourseDetailsPage() {
                             )}
 
                             <p className="text-gray-700 mb-2 dark:text-gray-300"><strong>Instructor:</strong> {courseDetails.profiles?.full_name || 'N/A'}</p>
-                            {/* Dihapus: Published dan Created */}
                             
                             <button
-                                onClick={handleEnroll}
-                                disabled={enrollLoading}
+                                onClick={isEnrolled ? () => {
+                                    const firstModule = courseDetails.modules.length > 0 ? courseDetails.modules[0] : null;
+                                    const firstLesson = firstModule && firstModule.lessons.length > 0 ? firstModule.lessons[0] : null;
+                                    if (firstLesson) {
+                                        navigate(`/course/${courseDetails.id}/lesson/${firstLesson.id}`);
+                                    } else {
+                                        navigate('/dashboard');
+                                    }
+                                } : handleEnroll}
+                                disabled={enrollLoading} // <--- PERUBAHAN UTAMA DI SINI
                                 className={`mt-4 w-full py-2 rounded-md transition-colors ${
                                     isEnrolled
                                         ? 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-dark-accent-purple dark:hover:bg-purple-800'
@@ -265,7 +272,7 @@ export default function CourseDetailsPage() {
                                                                         to={`/course/${courseId}/lesson/${lesson.id}`}
                                                                         className="block font-medium text-gray-800 hover:text-purple-700 transition-colors dark:text-white dark:hover:text-dark-accent-purple"
                                                                     >
-                                                                        {lesson.title} {/* Dihapus: (Order: X) */}
+                                                                        {lesson.title} 
                                                                     </Link>
                                                                     {lesson.pdf_url && (
                                                                         <p className="text-xs text-blue-600 truncate mb-1 dark:text-blue-400">
@@ -286,7 +293,7 @@ export default function CourseDetailsPage() {
                                                                                                 {lm.materials.content_type === 'text' && <DocumentTextIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />}
                                                                                                 {lm.materials.content_type === 'script' && <CodeBracketIcon className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />}
                                                                                                 {lm.materials.content_type === 'pdf' && <DocumentIcon className="h-4 w-4 text-purple-500 dark:text-purple-400" />}
-                                                                                                <span className="dark:text-gray-100">{lm.materials.title}</span> {/* Dihapus: (content_type) dan (Order: X) */}
+                                                                                                <span className="dark:text-gray-100">{lm.materials.title}</span> 
                                                                                                 {lm.materials.content_url && (
                                                                                                     <a href={lm.materials.content_url} target="_blank" rel="noopener noreferrer" className="ml-1 text-blue-500 hover:underline dark:text-blue-400 dark:hover:underline">View</a>
                                                                                                 )}

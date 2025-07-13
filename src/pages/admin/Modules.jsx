@@ -312,7 +312,8 @@ export default function AdminManageModules() {
                 </div>
 
                 <div className="relative flex space-x-4">
-                    <select
+                    <div  className='relative flex-grow'>
+                        <select
                         className="w-full py-2 pl-4 pr-10 rounded-full bg-gray-100 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 cursor-pointer appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-adminDark-accent-green"
                         value={filterCourseId}
                         onChange={(e) => {
@@ -327,6 +328,7 @@ export default function AdminManageModules() {
                     </select>
                     <ChevronDownIcon className="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none dark:text-gray-500" />
                     
+                    </div>
                     {/* Tombol Tambah Modul */}
                     <button
                         onClick={openAddModal}

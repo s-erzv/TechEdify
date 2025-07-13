@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000); // 10 second timeout
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 20000); // 10 second timeout
       });
 
       const { data: fullProfileData, error: fullProfileError } = await Promise.race([

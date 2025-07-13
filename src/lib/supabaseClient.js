@@ -25,8 +25,7 @@ export const recordDailyActivity = async (userId, activityType = 'login', count 
     // First, try to find existing record for today
     const { data: existingRecord, error: fetchError } = await supabase
       .from('user_daily_activity')
-      // Secara eksplisit pilih kolom yang relevan dari skema Anda
-      .select('id, lessons_completed_count, quizzes_attempted_count, duration_minutes')
+      .select('id, lessons_completed_count, quizzes_attempted_count, duration_minutes') // Secara eksplisit pilih kolom yang relevan dari skema Anda
       .eq('user_id', userId)
       .eq('activity_date', activityDate)
       .single();

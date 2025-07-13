@@ -388,12 +388,12 @@ export default function SettingsPage() {
                                     <p className="text-lg font-semibold dark:text-white">{userEmail}</p>
                                 </div>
                                 {/* Role removed from Student Card */}
-                                {profile?.role === 'student' && (
+                                {/* {profile?.role === 'student' && (
                                     <div>
                                         <p className="text-sm opacity-80 dark:text-gray-400">Bonus Points</p>
                                         <p className="text-lg font-semibold dark:text-white">{userBonusPoint}</p>
                                     </div>
-                                )}
+                                )} */}
                             </div>
                         </div>
 
