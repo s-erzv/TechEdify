@@ -101,7 +101,7 @@ export default function Sidebar() {
                     setIsSidebarOpen(false);
                   }
                 }}
-                className={`flex items-center py-3 rounded-lg transition-colors duration-200 relative group
+                className={`flex items-center py-2 rounded-lg transition-colors duration-200 relative group
                   ${isCollapsed ? 'justify-center p-3' : 'px-4'}
                   ${location.pathname === item.path
                     ? 'bg-white text-purple-700 shadow-sm dark:bg-dark-accent-purple dark:text-dark-text-light'
@@ -109,9 +109,9 @@ export default function Sidebar() {
                   }`}
                 title={isCollapsed ? item.name : ''}
               >
-                <item.icon className={`h-6 w-6 flex-shrink-0 ${!isCollapsed ? 'mr-3' : ''}`} />
+                <item.icon className={`h-5 w-5 flex-shrink-0 ${!isCollapsed ? 'mr-3' : ''}`} />
                 {!isCollapsed && (
-                  <span className="text-md font-medium whitespace-nowrap">{item.name}</span>
+                  <span className="text-sm font-medium whitespace-nowrap">{item.name}</span>
                 )}
 
                 {isCollapsed && (
@@ -125,7 +125,7 @@ export default function Sidebar() {
           
           {/* Menu Admin tambahan (hanya jika user adalah admin) */}
           {profile?.role === 'admin' && (
-            <li className={`${isCollapsed ? 'mt-6' : 'mt-6 px-4'} mb-2 pt-4 border-t border-gray-200 dark:border-gray-700`}>
+            <li className={`${isCollapsed ? 'mt-6' : 'mt-6 px-2'} mb-2 pt-4 border-t border-gray-200 dark:border-gray-700`}>
               <Link
                 to={adminNavItem.path}
                 onClick={() => {
@@ -141,9 +141,9 @@ export default function Sidebar() {
                   }`}
                 title={isCollapsed ? adminNavItem.name : ''}
               >
-                <adminNavItem.icon className={`h-6 w-6 flex-shrink-0 ${!isCollapsed ? 'mr-3' : ''}`} />
+                <adminNavItem.icon className={`h-5 w-5 flex-shrink-0 ${!isCollapsed ? 'mr-3' : ''}`} />
                 {!isCollapsed && (
-                  <span className="text-md font-medium whitespace-nowrap">{adminNavItem.name}</span>
+                  <span className="text-sm font-medium whitespace-nowrap">{adminNavItem.name}</span>
                 )}
                 {isCollapsed && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
